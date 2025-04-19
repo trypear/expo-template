@@ -1,0 +1,1 @@
+export const platform = process.env.EXPO_OS as "ios" | "android" | "web";

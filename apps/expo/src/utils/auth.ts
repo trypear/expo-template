@@ -10,10 +10,13 @@ import { deleteToken, setToken } from "./session-store";
 export const signIn = async () => {
   const signInUrl = `${getBaseUrl()}/api/auth/signin`;
   const redirectTo = Linking.createURL("/login");
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const result = await Browser.openAuthSessionAsync(
     `${signInUrl}?expo-redirect=${encodeURIComponent(redirectTo)}`,
     redirectTo,
   );
+
+  if(!result) return false;
 
   if (result.type !== "success") return false;
   const url = Linking.parse(result.url);

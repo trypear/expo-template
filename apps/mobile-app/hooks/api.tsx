@@ -9,12 +9,8 @@ import { getBaseUrl } from "./base-url";
 import { getToken } from "./session-store";
 
 export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      // ...
-    },
-  },
-});
+  defaultOptions: { queries: { retry: 2 } },
+})
 
 /**
  * A set of typesafe hooks for consuming your API.

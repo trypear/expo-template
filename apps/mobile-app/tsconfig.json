@@ -3,7 +3,7 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "~/*": ["./src/*"],
+      "~/*": ["./app/*"],
       "@/*": [
         "./*"
       ]
@@ -13,7 +13,10 @@
     "moduleSuffixes": [".ios", ".android", ".native", ""]
   },
   "include": [
-    "src",
+    "app",
+    "components",
+    "constants",
+    "hooks",
     "*.ts",
     "*.js",
     ".expo/types/**/*.ts",

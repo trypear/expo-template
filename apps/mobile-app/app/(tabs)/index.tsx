@@ -1,11 +1,17 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Image, StyleSheet, Platform } from 'react-native';
 
 import { HelloWave } from '@/components/HelloWave';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { useQuery } from '@tanstack/react-query';
+import { trpc } from '../../hooks/api';
 
 export default function HomeScreen() {
+  const query = useQuery(trpc.post.all.queryOptions())
+
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
@@ -32,6 +38,10 @@ export default function HomeScreen() {
             })}
           </ThemedText>{' '}
           to open developer tools.
+          {
+
+            JSON.stringify(query.data)
+          }
         </ThemedText>
       </ThemedView>
       <ThemedView style={styles.stepContainer}>

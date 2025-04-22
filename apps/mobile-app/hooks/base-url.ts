@@ -24,5 +24,5 @@ export const getBaseUrl = () => {
   //     "Failed to get localhost. Please point to your production server.",
   //   );
   // }
-  return `http://deathmail-mac.j4a.uk`;
+  return `https://deathmail-mac.j4a.uk`;
 };

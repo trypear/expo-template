@@ -1,5 +1,5 @@
 import { sql, } from "drizzle-orm";
-import { numeric, uniqueIndex, index, timestamp, varchar, text, integer, uuid, } from "drizzle-orm/pg-core";
+import { numeric, uniqueIndex, index, timestamp, varchar, text, integer } from "drizzle-orm/pg-core";
 import { createTable, fk, lower } from "./utils";
 import { z } from "zod";
 
@@ -62,7 +62,6 @@ export const transaction = createTable(
   "transaction",
   {
     projectId: fk("projectId", () => project, { onDelete: "cascade" }),
-    sd: uuid().references(() => user.id),
     type: varchar({ length: 20 }).$type<typeof transactionType._type>().notNull(),
     amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
     description: text(),

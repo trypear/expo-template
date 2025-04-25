@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { TRPCRouterRecord } from "@trpc/server";
+import type { TRPCRouterRecord } from "@trpc/server";
 import { and, desc, eqi, gte, lte } from "@acme/db";
 
-import { budget, project, transaction } from "@acme/db/schema";
+import { budget, project, transaction, transactionType } from "@acme/db/schema";
 import { protectedProcedure } from "../trpc";
 
 // Input validation schemas
@@ -22,7 +22,7 @@ const budgetSchema = z.object({
 
 const transactionSchema = z.object({
 	projectId: z.string(),
-	type: z.enum(["INCOMING", "OUTGOING"]),
+	type: transactionType,
 	amount: z.number().positive(),
 	description: z.string().optional(),
 	date: z.date(),
@@ -214,7 +214,7 @@ export const budgetRouter = {
 				projectId: z.string(),
 				startDate: z.date().optional(),
 				endDate: z.date().optional(),
-				type: z.enum(["INCOMING", "OUTGOING"]).optional(),
+				type: transactionType.optional(),
 			}),
 		)
 		.query(async ({ ctx, input }) => {

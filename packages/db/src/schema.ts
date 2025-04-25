@@ -1,6 +1,7 @@
 import { sql, } from "drizzle-orm";
 import { numeric, uniqueIndex, index, timestamp, varchar, text, integer, uuid, } from "drizzle-orm/pg-core";
 import { createTable, fk, lower } from "./utils";
+import { z } from "zod";
 
 export const user = createTable(
   "user",
@@ -55,12 +56,14 @@ export const budget = createTable(
 export type Budget = typeof budget.$inferSelect;
 export type NewBudget = typeof budget.$inferInsert;
 
+export const transactionType = z.enum(["INCOMING", "OUTGOING"]);
+
 export const transaction = createTable(
   "transaction",
   {
     projectId: fk("projectId", () => project, { onDelete: "cascade" }),
     sd: uuid().references(() => user.id),
-    type: varchar({ length: 20 }).$type<"INCOMING" | "OUTGOING">().notNull(),
+    type: varchar({ length: 20 }).$type<typeof transactionType._type>().notNull(),
     amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
     description: text(),
     date: timestamp().notNull(),

@@ -1,16 +1,15 @@
 import { sql, } from "drizzle-orm";
-import { pgTable, numeric, uniqueIndex, index, } from "drizzle-orm/pg-core";
-import { lower } from "./utils";
+import { numeric, uniqueIndex, index, timestamp, varchar, text, integer, } from "drizzle-orm/pg-core";
+import { createTable, fk, lower } from "./utils";
 
-export const user = pgTable(
+export const user = createTable(
   "user",
-  (t) => ({
-    id: t.uuid().notNull().primaryKey().defaultRandom(),
-    name: t.varchar({ length: 255 }),
-    email: t.varchar({ length: 255 }).notNull(),
-    emailVerified: t.timestamp({ mode: "date", withTimezone: true }),
-    image: t.varchar({ length: 255 }),
-  }),
+  {
+    name: varchar({ length: 255 }),
+    email: varchar({ length: 255 }).notNull(),
+    emailVerified: timestamp({ mode: "date", withTimezone: true }),
+    image: varchar({ length: 255 }),
+  },
   (t) => [
     uniqueIndex("user_email_idx").on(lower(t.email))
   ]
@@ -19,37 +18,36 @@ export const user = pgTable(
 export type User = typeof user.$inferSelect;
 export type NewUser = typeof user.$inferInsert;
 
-export const project = pgTable(
+export const project = createTable(
   "project",
-  (t) => ({
-    id: t.uuid().notNull().primaryKey().defaultRandom(),
-    userId: t.uuid().notNull().references(() => user.id, { onDelete: "cascade" }),
-    name: t.varchar({ length: 255 }).notNull(),
-    description: t.text(),
-    createdAt: t.timestamp().defaultNow().notNull(),
-    updatedAt: t.timestamp({ mode: "date", withTimezone: true }).$onUpdateFn(() => sql`now()`),
-  }),
+  {
+    userId: fk("userId", user),
+    name: varchar({ length: 255 }).notNull(),
+    description: text(),
+    createdAt: timestamp().defaultNow().notNull(),
+    updatedAt: timestamp({ mode: "date", withTimezone: true }).$onUpdateFn(() => sql`now()`),
+  },
   (t) => [
     index("project_user_id_created_at_idx").on(t.userId, t.createdAt)
   ]
 );
 
+
 export type Project = typeof project.$inferSelect;
 export type NewProject = typeof project.$inferInsert;
 
-export const budget = pgTable(
+export const budget = createTable(
   "budget",
-  (t) => ({
-    id: t.uuid().notNull().primaryKey().defaultRandom(),
-    projectId: t.uuid().notNull().references(() => project.id, { onDelete: "cascade" }),
+  {
+    projectId: fk("projectId", project, { onDelete: "cascade" }),
     amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
-    startDate: t.timestamp().notNull(),
-    endDate: t.timestamp(),
-    name: t.varchar({ length: 255 }).notNull(),
-    description: t.text(),
-    createdAt: t.timestamp().defaultNow().notNull(),
-    updatedAt: t.timestamp({ mode: "date", withTimezone: true }).$onUpdateFn(() => sql`now()`),
-  }),
+    startDate: timestamp().notNull(),
+    endDate: timestamp(),
+    name: varchar({ length: 255 }).notNull(),
+    description: text(),
+    createdAt: timestamp().defaultNow().notNull(),
+    updatedAt: timestamp({ mode: "date", withTimezone: true }).$onUpdateFn(() => sql`now()`),
+  },
   (t) => [
     index("budget_project_id_start_date_idx").on(t.projectId, t.startDate)
   ]
@@ -58,18 +56,17 @@ export const budget = pgTable(
 export type Budget = typeof budget.$inferSelect;
 export type NewBudget = typeof budget.$inferInsert;
 
-export const transaction = pgTable(
+export const transaction = createTable(
   "transaction",
-  (t) => ({
-    id: t.uuid().notNull().primaryKey().defaultRandom(),
-    projectId: t.uuid().notNull().references(() => project.id, { onDelete: "cascade" }),
-    type: t.varchar({ length: 20 }).$type<"INCOMING" | "OUTGOING">().notNull(),
+  {
+    projectId: fk("projectId", project),
+    type: varchar({ length: 20 }).$type<"INCOMING" | "OUTGOING">().notNull(),
     amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
-    description: t.text(),
-    date: t.timestamp().notNull(),
-    createdAt: t.timestamp().defaultNow().notNull(),
-    updatedAt: t.timestamp({ mode: "date", withTimezone: true }).$onUpdateFn(() => sql`now()`),
-  }),
+    description: text(),
+    date: timestamp().notNull(),
+    createdAt: timestamp().defaultNow().notNull(),
+    updatedAt: timestamp({ mode: "date", withTimezone: true }).$onUpdateFn(() => sql`now()`),
+  },
   (t) => [
     index("transaction_project_id_date_idx").on(t.projectId, t.date),
     index("transaction_project_id_type_idx").on(t.projectId, t.type)
@@ -79,28 +76,23 @@ export const transaction = pgTable(
 export type Transaction = typeof transaction.$inferSelect;
 export type NewTransaction = typeof transaction.$inferInsert;
 
-export const account = pgTable(
+export const account = createTable(
   "account",
-  (t) => ({
-    userId: t
-      .uuid()
-      .notNull()
-      .references(() => user.id, { onDelete: "cascade" })
-      .primaryKey(),
-    type: t
-      .varchar({ length: 255 })
+  {
+    userId: fk("userId", user, { onDelete: "cascade" }),
+    type: varchar({ length: 255 })
       .$type<"email" | "oauth" | "oidc" | "webauthn">()
       .notNull(),
-    provider: t.varchar({ length: 255 }).notNull(),
-    provideraccountId: t.varchar({ length: 255 }).notNull(),
-    refresh_token: t.varchar({ length: 255 }),
-    access_token: t.text(),
-    expires_at: t.integer(),
-    token_type: t.varchar({ length: 255 }),
-    scope: t.varchar({ length: 255 }),
-    id_token: t.text(),
-    session_state: t.varchar({ length: 255 }),
-  }),
+    provider: varchar({ length: 255 }).notNull(),
+    provideraccountId: varchar({ length: 255 }).notNull(),
+    refresh_token: varchar({ length: 255 }),
+    access_token: text(),
+    expires_at: integer(),
+    token_type: varchar({ length: 255 }),
+    scope: varchar({ length: 255 }),
+    id_token: text(),
+    session_state: varchar({ length: 255 }),
+  },
   (t) => [
     uniqueIndex("account_user_id_idx").on(t.userId)
   ],
@@ -109,17 +101,16 @@ export const account = pgTable(
 export type Account = typeof account.$inferSelect;
 export type NewAccount = typeof account.$inferInsert;
 
-export const session = pgTable("session", (t) => ({
-  sessionToken: t.varchar({ length: 255 }).notNull().primaryKey(),
-  userId: t
-    .uuid()
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-  expires: t.timestamp({ mode: "date", withTimezone: true }).notNull(),
-}),
+export const session = createTable("session", {
+  sessionToken: varchar({ length: 255 }).notNull().primaryKey(),
+  userId: fk("userId", user, { onDelete: "cascade" }),
+  expires: timestamp({ mode: "date", withTimezone: true }).notNull(),
+},
   (t) => [
     uniqueIndex("session_user_id_idx").on(t.userId, t.sessionToken)
   ]);
 
 export type Session = typeof session.$inferSelect;
 export type NewSession = typeof session.$inferInsert;
+
+

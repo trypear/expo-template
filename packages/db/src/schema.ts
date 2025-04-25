@@ -1,38 +1,71 @@
-import { relations, sql } from "drizzle-orm";
-import { pgTable, primaryKey } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod";
+import { sql, } from "drizzle-orm";
+import { pgTable, numeric, uniqueIndex, index, } from "drizzle-orm/pg-core";
+import { lower } from "./utils";
 
-export const Post = pgTable("post", (t) => ({
-  id: t.uuid().notNull().primaryKey().defaultRandom(),
-  title: t.varchar({ length: 256 }).notNull(),
-  content: t.text().notNull(),
-  createdAt: t.timestamp().defaultNow().notNull(),
-  updatedAt: t
-    .timestamp({ mode: "date", withTimezone: true })
-    .$onUpdateFn(() => sql`now()`),
-}));
+export const User = pgTable(
+  "user",
+  (t) => ({
+    id: t.uuid().notNull().primaryKey().defaultRandom(),
+    name: t.varchar({ length: 255 }),
+    email: t.varchar({ length: 255 }).notNull(),
+    emailVerified: t.timestamp({ mode: "date", withTimezone: true }),
+    image: t.varchar({ length: 255 }),
+  }),
+  (t) => [
+    uniqueIndex("user_email_idx").on(lower(t.email))
+  ]
+);
 
-export const CreatePostSchema = createInsertSchema(Post, {
-  title: z.string().max(256),
-  content: z.string().max(256),
-}).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const Project = pgTable(
+  "project",
+  (t) => ({
+    id: t.uuid().notNull().primaryKey().defaultRandom(),
+    userId: t.uuid().notNull().references(() => User.id, { onDelete: "cascade" }),
+    name: t.varchar({ length: 255 }).notNull(),
+    description: t.text(),
+    createdAt: t.timestamp().defaultNow().notNull(),
+    updatedAt: t.timestamp({ mode: "date", withTimezone: true }).$onUpdateFn(() => sql`now()`),
+  }),
+  (t) => [
+    index("project_user_id_created_at_idx").on(t.userId, t.createdAt)
+  ]
+);
 
-export const User = pgTable("user", (t) => ({
-  id: t.uuid().notNull().primaryKey().defaultRandom(),
-  name: t.varchar({ length: 255 }),
-  email: t.varchar({ length: 255 }).notNull(),
-  emailVerified: t.timestamp({ mode: "date", withTimezone: true }),
-  image: t.varchar({ length: 255 }),
-}));
+export const Budget = pgTable(
+  "budget",
+  (t) => ({
+    id: t.uuid().notNull().primaryKey().defaultRandom(),
+    projectId: t.uuid().notNull().references(() => Project.id, { onDelete: "cascade" }),
+    amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+    startDate: t.timestamp().notNull(),
+    endDate: t.timestamp(),
+    name: t.varchar({ length: 255 }).notNull(),
+    description: t.text(),
+    createdAt: t.timestamp().defaultNow().notNull(),
+    updatedAt: t.timestamp({ mode: "date", withTimezone: true }).$onUpdateFn(() => sql`now()`),
+  }),
+  (t) => [
+    index("budget_project_id_start_date_idx").on(t.projectId, t.startDate)
+  ]
+);
 
-export const UserRelations = relations(User, ({ many }) => ({
-  accounts: many(Account),
-}));
+export const Transaction = pgTable(
+  "transaction",
+  (t) => ({
+    id: t.uuid().notNull().primaryKey().defaultRandom(),
+    projectId: t.uuid().notNull().references(() => Project.id, { onDelete: "cascade" }),
+    type: t.varchar({ length: 20 }).$type<"INCOMING" | "OUTGOING">().notNull(),
+    amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+    description: t.text(),
+    date: t.timestamp().notNull(),
+    createdAt: t.timestamp().defaultNow().notNull(),
+    updatedAt: t.timestamp({ mode: "date", withTimezone: true }).$onUpdateFn(() => sql`now()`),
+  }),
+  (t) => [
+    index("transaction_project_id_date_idx").on(t.projectId, t.date),
+    index("transaction_project_id_type_idx").on(t.projectId, t.type)
+  ]
+);
 
 export const Account = pgTable(
   "account",
@@ -40,7 +73,8 @@ export const Account = pgTable(
     userId: t
       .uuid()
       .notNull()
-      .references(() => User.id, { onDelete: "cascade" }),
+      .references(() => User.id, { onDelete: "cascade" })
+      .primaryKey(),
     type: t
       .varchar({ length: 255 })
       .$type<"email" | "oauth" | "oidc" | "webauthn">()
@@ -55,16 +89,10 @@ export const Account = pgTable(
     id_token: t.text(),
     session_state: t.varchar({ length: 255 }),
   }),
-  (account) => ({
-    compoundKey: primaryKey({
-      columns: [account.provider, account.providerAccountId],
-    }),
-  }),
+  (t) => [
+    uniqueIndex("account_user_id_idx").on(t.userId)
+  ],
 );
-
-export const AccountRelations = relations(Account, ({ one }) => ({
-  user: one(User, { fields: [Account.userId], references: [User.id] }),
-}));
 
 export const Session = pgTable("session", (t) => ({
   sessionToken: t.varchar({ length: 255 }).notNull().primaryKey(),
@@ -73,8 +101,7 @@ export const Session = pgTable("session", (t) => ({
     .notNull()
     .references(() => User.id, { onDelete: "cascade" }),
   expires: t.timestamp({ mode: "date", withTimezone: true }).notNull(),
-}));
-
-export const SessionRelations = relations(Session, ({ one }) => ({
-  user: one(User, { fields: [Session.userId], references: [User.id] }),
-}));
+}),
+  (t) => [
+    uniqueIndex("session_user_id_idx").on(t.userId, t.sessionToken)
+  ]);

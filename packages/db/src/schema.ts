@@ -1,5 +1,5 @@
 import { sql, } from "drizzle-orm";
-import { numeric, uniqueIndex, index, timestamp, varchar, text, integer, } from "drizzle-orm/pg-core";
+import { numeric, uniqueIndex, index, timestamp, varchar, text, integer, uuid, } from "drizzle-orm/pg-core";
 import { createTable, fk, lower } from "./utils";
 
 export const user = createTable(
@@ -21,7 +21,7 @@ export type NewUser = typeof user.$inferInsert;
 export const project = createTable(
   "project",
   {
-    userId: fk("userId", user),
+    userId: fk("userId", () => user, { onDelete: "cascade" }),
     name: varchar({ length: 255 }).notNull(),
     description: text(),
     createdAt: timestamp().defaultNow().notNull(),
@@ -32,14 +32,13 @@ export const project = createTable(
   ]
 );
 
-
 export type Project = typeof project.$inferSelect;
 export type NewProject = typeof project.$inferInsert;
 
 export const budget = createTable(
   "budget",
   {
-    projectId: fk("projectId", project, { onDelete: "cascade" }),
+    projectId: fk("projectId", () => project, { onDelete: "cascade" }),
     amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
     startDate: timestamp().notNull(),
     endDate: timestamp(),
@@ -59,7 +58,8 @@ export type NewBudget = typeof budget.$inferInsert;
 export const transaction = createTable(
   "transaction",
   {
-    projectId: fk("projectId", project),
+    projectId: fk("projectId", () => project, { onDelete: "cascade" }),
+    sd: uuid().references(() => user.id),
     type: varchar({ length: 20 }).$type<"INCOMING" | "OUTGOING">().notNull(),
     amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
     description: text(),
@@ -79,7 +79,7 @@ export type NewTransaction = typeof transaction.$inferInsert;
 export const account = createTable(
   "account",
   {
-    userId: fk("userId", user, { onDelete: "cascade" }),
+    userId: fk("userId", () => user, { onDelete: "cascade" }),
     type: varchar({ length: 255 })
       .$type<"email" | "oauth" | "oidc" | "webauthn">()
       .notNull(),
@@ -102,8 +102,8 @@ export type Account = typeof account.$inferSelect;
 export type NewAccount = typeof account.$inferInsert;
 
 export const session = createTable("session", {
-  sessionToken: varchar({ length: 255 }).notNull().primaryKey(),
-  userId: fk("userId", user, { onDelete: "cascade" }),
+  sessionToken: varchar({ length: 255 }).notNull(),
+  userId: fk("userId", () => user, { onDelete: "cascade" }),
   expires: timestamp({ mode: "date", withTimezone: true }).notNull(),
 },
   (t) => [
@@ -112,5 +112,3 @@ export const session = createTable("session", {
 
 export type Session = typeof session.$inferSelect;
 export type NewSession = typeof session.$inferInsert;
-
-

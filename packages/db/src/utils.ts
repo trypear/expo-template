@@ -1,5 +1,6 @@
 import type {
 	AnyPgColumn,
+	AnyPgTable,
 	PgColumnBuilderBase,
 	PgTableExtraConfigValue,
 	PgTableWithColumns,
@@ -15,11 +16,6 @@ import {
 } from "drizzle-orm/pg-core";
 
 /**
- * Type for prefixed identifiers with table name
- */
-type PrefixedId<TableName extends string> = `${TableName}_${string}`;
-
-/**
  * Extracts the UUID portion after the table prefix
  */
 function extractUuid(prefixedId: string): string {
@@ -28,16 +24,21 @@ function extractUuid(prefixedId: string): string {
 }
 
 /**
+ * Type for prefixed identifiers with table name
+ */
+type PrefixedId<TableName extends string> = `${TableName}_${string}`;
+
+/**
  * Creates a custom type that automatically prefixes UUIDs with the table name
  */
-export function createPrefixedUuid<TableName extends string>(tableName: TableName) {
+export function createPrefixedUuid<TableName extends string>(tableNameFn: () => TableName) {
 	return customType<{
 		data: string;
 		driverData: PrefixedId<TableName>;
 	}>({
 		dataType: () => 'uuid',
 		fromDriver: (val): PrefixedId<TableName> => {
-			return `${tableName}_${val}` as PrefixedId<TableName>;
+			return `${tableNameFn()}_${val}` as PrefixedId<TableName>;
 		},
 		toDriver: (val) => {
 			return extractUuid(val) as PrefixedId<TableName>;
@@ -48,8 +49,8 @@ export function createPrefixedUuid<TableName extends string>(tableName: TableNam
 /**
  * Creates a primary key column with auto-generated UUID and table name prefix
  */
-export function pk<TableName extends string>(tableName: TableName) {
-	return createPrefixedUuid<TableName>(tableName)()
+export function pk<TableName extends string>(tableNameFn: () => TableName) {
+	return createPrefixedUuid<TableName>(tableNameFn)()
 		.primaryKey()
 		.notNull()
 		.default(sql`gen_random_uuid()`);
@@ -62,22 +63,26 @@ type ExtractTableName<T> = T extends { _: { name: infer N extends string } } ? N
 
 /**
  * Creates a foreign key column referencing another table's ID with proper type prefixing
+ * Uses lazy reference pattern to avoid circular dependencies
  */
 export function fk<
-	T extends { id: AnyPgColumn; _: { name: string } }
+	T extends { id: AnyPgColumn; _: { name: string } } & AnyPgTable
 >(
 	columnName: string,
-	referencedTable: T,
+	referencedTableFn: () => T,
 	options?: {
 		onDelete?: UpdateDeleteAction,
 		onUpdate?: UpdateDeleteAction,
 	}
 ) {
-	const targetTableName = referencedTable._.name as ExtractTableName<T>;
+	// Extract the table name from the column name
+	const getTableName = () => {
+		return referencedTableFn()._.name;
+	};
 
-	return createPrefixedUuid<ExtractTableName<T>>(targetTableName)(columnName)
+	return createPrefixedUuid<ExtractTableName<T>>(getTableName as () => ExtractTableName<T>)(columnName)
 		.notNull()
-		.references(() => referencedTable.id, {
+		.references(() => referencedTableFn().id, {
 			onDelete: options?.onDelete,
 			onUpdate: options?.onUpdate
 		});
@@ -96,7 +101,7 @@ type ColumnDefinitions = Record<string, PgColumnBuilderBase>;
  * Standard fields for all tables: id, createdAt, updatedAt
  */
 export const createBaseFields = <TableName extends string>(tableName: TableName) => ({
-	id: pk<TableName>(tableName),
+	id: pk<TableName>(() => tableName),
 	createdAt: timestamp("created_at").defaultNow(),
 	updatedAt: timestamp("updated_at").defaultNow().$onUpdate(() => new Date()),
 });

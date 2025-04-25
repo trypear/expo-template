@@ -144,6 +144,7 @@ type TableResult<
 
 /**
  * Creates a table with standardized ID and timestamp fields automatically added
+ * WARNING: IDs are PREFIXED so if you use RAW SQL, you will need to do table.id.fromDriver(x) to strip the prefix
  */
 export function createTable<
 	TableName extends string,

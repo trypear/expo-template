@@ -30,7 +30,9 @@ export const signIn = async () => {
 };
 
 export const useUser = () => {
-  const { data: session } = useQuery(trpc.auth.getSession.queryOptions());
+  const { data: session, isLoading } = useQuery(trpc.auth.getSession.queryOptions());
+
+  if (isLoading) return null;
   return session?.user ?? null;
 };
 

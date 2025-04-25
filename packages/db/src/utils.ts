@@ -73,6 +73,7 @@ export function fk<
 	options?: {
 		onDelete?: UpdateDeleteAction,
 		onUpdate?: UpdateDeleteAction,
+		column?: () => AnyPgColumn
 	}
 ) {
 	// Extract the table name from the column name
@@ -82,7 +83,7 @@ export function fk<
 
 	return createPrefixedUuid<ExtractTableName<T>>(getTableName as () => ExtractTableName<T>)(columnName)
 		.notNull()
-		.references(() => referencedTableFn().id, {
+		.references(() => (options?.column ? options.column() : referencedTableFn().id), {
 			onDelete: options?.onDelete,
 			onUpdate: options?.onUpdate
 		});

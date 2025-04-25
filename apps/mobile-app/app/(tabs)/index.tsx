@@ -40,7 +40,7 @@ export default function HomeScreen() {
             })}
           </ThemedText>{" "}
           to open developer tools.
-          {JSON.stringify(query.data)}
+          {query.data?.length === 0 ? "LENGTH 0" : "LENGTH MORE THAN 0"}
         </ThemedText>
       </ThemedView>
       <ThemedView style={styles.stepContainer}>

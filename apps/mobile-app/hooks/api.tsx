@@ -10,7 +10,7 @@ import { getToken } from "./session-store";
 
 export const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 2 } },
-})
+});
 
 /**
  * A set of typesafe hooks for consuming your API.
@@ -27,6 +27,18 @@ export const trpc = createTRPCOptionsProxy<AppRouter>({
       httpBatchLink({
         transformer: superjson,
         url: `${getBaseUrl()}/api/trpc`,
+        fetch(url, options) {
+          // Create a new AbortController
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+          return fetch(url, {
+            ...options,
+            signal: controller.signal,
+          }).finally(() => {
+            clearTimeout(timeoutId);
+          });
+        },
         headers() {
           const headers = new Map<string, string>();
           headers.set("x-trpc-source", "expo-react");

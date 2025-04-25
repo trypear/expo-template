@@ -16,6 +16,9 @@ export const user = pgTable(
   ]
 );
 
+export type User = typeof user.$inferSelect;
+export type NewUser = typeof user.$inferInsert;
+
 export const project = pgTable(
   "project",
   (t) => ({
@@ -31,7 +34,10 @@ export const project = pgTable(
   ]
 );
 
-export const Budget = pgTable(
+export type Project = typeof project.$inferSelect;
+export type NewProject = typeof project.$inferInsert;
+
+export const budget = pgTable(
   "budget",
   (t) => ({
     id: t.uuid().notNull().primaryKey().defaultRandom(),
@@ -49,6 +55,8 @@ export const Budget = pgTable(
   ]
 );
 
+export type Budget = typeof budget.$inferSelect;
+export type NewBudget = typeof budget.$inferInsert;
 
 export const transaction = pgTable(
   "transaction",
@@ -67,6 +75,9 @@ export const transaction = pgTable(
     index("transaction_project_id_type_idx").on(t.projectId, t.type)
   ]
 );
+
+export type Transaction = typeof transaction.$inferSelect;
+export type NewTransaction = typeof transaction.$inferInsert;
 
 export const account = pgTable(
   "account",
@@ -95,6 +106,9 @@ export const account = pgTable(
   ],
 );
 
+export type Account = typeof account.$inferSelect;
+export type NewAccount = typeof account.$inferInsert;
+
 export const session = pgTable("session", (t) => ({
   sessionToken: t.varchar({ length: 255 }).notNull().primaryKey(),
   userId: t
@@ -106,3 +120,6 @@ export const session = pgTable("session", (t) => ({
   (t) => [
     uniqueIndex("session_user_id_idx").on(t.userId, t.sessionToken)
   ]);
+
+export type Session = typeof session.$inferSelect;
+export type NewSession = typeof session.$inferInsert;

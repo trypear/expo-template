@@ -1,6 +1,6 @@
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-import { Project, Budget, Transaction } from "./schema";
+import { project, Budget, transaction } from "./schema";
 
 const commonOmitFields = {
 	id: true,
@@ -8,7 +8,7 @@ const commonOmitFields = {
 	updatedAt: true,
 } as const;
 
-export const CreateProjectSchema = createInsertSchema(Project, {
+export const createProjectSchema = createInsertSchema(project, {
 	name: z.string().min(1).max(255),
 	description: z.string().optional(),
 }).omit({
@@ -16,7 +16,7 @@ export const CreateProjectSchema = createInsertSchema(Project, {
 	userId: true,
 });
 
-export const CreateBudgetSchema = createInsertSchema(Budget, {
+export const createBudgetSchema = createInsertSchema(Budget, {
 	amount: z.number().positive(),
 	startDate: z.date(),
 	endDate: z.date().optional(),
@@ -27,7 +27,7 @@ export const CreateBudgetSchema = createInsertSchema(Budget, {
 	projectId: true,
 });
 
-export const CreateTransactionSchema = createInsertSchema(Transaction, {
+export const createTransactionSchema = createInsertSchema(transaction, {
 	type: z.enum(["INCOMING", "OUTGOING"]),
 	amount: z.number().positive(),
 	description: z.string().optional(),

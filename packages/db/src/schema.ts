@@ -2,7 +2,7 @@ import { sql, } from "drizzle-orm";
 import { pgTable, numeric, uniqueIndex, index, } from "drizzle-orm/pg-core";
 import { lower } from "./utils";
 
-export const User = pgTable(
+export const user = pgTable(
   "user",
   (t) => ({
     id: t.uuid().notNull().primaryKey().defaultRandom(),
@@ -16,11 +16,11 @@ export const User = pgTable(
   ]
 );
 
-export const Project = pgTable(
+export const project = pgTable(
   "project",
   (t) => ({
     id: t.uuid().notNull().primaryKey().defaultRandom(),
-    userId: t.uuid().notNull().references(() => User.id, { onDelete: "cascade" }),
+    userId: t.uuid().notNull().references(() => user.id, { onDelete: "cascade" }),
     name: t.varchar({ length: 255 }).notNull(),
     description: t.text(),
     createdAt: t.timestamp().defaultNow().notNull(),
@@ -35,7 +35,7 @@ export const Budget = pgTable(
   "budget",
   (t) => ({
     id: t.uuid().notNull().primaryKey().defaultRandom(),
-    projectId: t.uuid().notNull().references(() => Project.id, { onDelete: "cascade" }),
+    projectId: t.uuid().notNull().references(() => project.id, { onDelete: "cascade" }),
     amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
     startDate: t.timestamp().notNull(),
     endDate: t.timestamp(),
@@ -49,11 +49,12 @@ export const Budget = pgTable(
   ]
 );
 
-export const Transaction = pgTable(
+
+export const transaction = pgTable(
   "transaction",
   (t) => ({
     id: t.uuid().notNull().primaryKey().defaultRandom(),
-    projectId: t.uuid().notNull().references(() => Project.id, { onDelete: "cascade" }),
+    projectId: t.uuid().notNull().references(() => project.id, { onDelete: "cascade" }),
     type: t.varchar({ length: 20 }).$type<"INCOMING" | "OUTGOING">().notNull(),
     amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
     description: t.text(),
@@ -67,20 +68,20 @@ export const Transaction = pgTable(
   ]
 );
 
-export const Account = pgTable(
+export const account = pgTable(
   "account",
   (t) => ({
     userId: t
       .uuid()
       .notNull()
-      .references(() => User.id, { onDelete: "cascade" })
+      .references(() => user.id, { onDelete: "cascade" })
       .primaryKey(),
     type: t
       .varchar({ length: 255 })
       .$type<"email" | "oauth" | "oidc" | "webauthn">()
       .notNull(),
     provider: t.varchar({ length: 255 }).notNull(),
-    providerAccountId: t.varchar({ length: 255 }).notNull(),
+    provideraccountId: t.varchar({ length: 255 }).notNull(),
     refresh_token: t.varchar({ length: 255 }),
     access_token: t.text(),
     expires_at: t.integer(),
@@ -94,12 +95,12 @@ export const Account = pgTable(
   ],
 );
 
-export const Session = pgTable("session", (t) => ({
+export const session = pgTable("session", (t) => ({
   sessionToken: t.varchar({ length: 255 }).notNull().primaryKey(),
   userId: t
     .uuid()
     .notNull()
-    .references(() => User.id, { onDelete: "cascade" }),
+    .references(() => user.id, { onDelete: "cascade" }),
   expires: t.timestamp({ mode: "date", withTimezone: true }).notNull(),
 }),
   (t) => [

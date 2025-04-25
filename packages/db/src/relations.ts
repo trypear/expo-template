@@ -1,29 +1,29 @@
 import { relations } from "drizzle-orm";
-import { Account, Budget, Project, Session, Transaction, User } from "./schema";
+import { account, Budget, project, session, transaction, user } from "./schema";
 
-export const UserRelations = relations(User, ({ many }) => ({
-	accounts: many(Account),
-	projects: many(Project),
+export const userRelations = relations(user, ({ many }) => ({
+	accounts: many(account),
+	projects: many(project),
 }));
 
-export const ProjectRelations = relations(Project, ({ one, many }) => ({
-	user: one(User, { fields: [Project.userId], references: [User.id] }),
+export const projectRelations = relations(project, ({ one, many }) => ({
+	user: one(user, { fields: [project.userId], references: [user.id] }),
 	budgets: many(Budget),
-	transactions: many(Transaction),
+	transactions: many(transaction),
 }));
 
 export const BudgetRelations = relations(Budget, ({ one }) => ({
-	project: one(Project, { fields: [Budget.projectId], references: [Project.id] }),
+	project: one(project, { fields: [Budget.projectId], references: [project.id] }),
 }));
 
-export const TransactionRelations = relations(Transaction, ({ one }) => ({
-	project: one(Project, { fields: [Transaction.projectId], references: [Project.id] }),
+export const transactionRelations = relations(transaction, ({ one }) => ({
+	project: one(project, { fields: [transaction.projectId], references: [project.id] }),
 }));
 
-export const AccountRelations = relations(Account, ({ one }) => ({
-	user: one(User, { fields: [Account.userId], references: [User.id] }),
+export const accountRelations = relations(account, ({ one }) => ({
+	user: one(user, { fields: [account.userId], references: [user.id] }),
 }));
 
-export const SessionRelations = relations(Session, ({ one }) => ({
-	user: one(User, { fields: [Session.userId], references: [User.id] }),
+export const SessionRelations = relations(session, ({ one }) => ({
+	user: one(user, { fields: [session.userId], references: [user.id] }),
 }));

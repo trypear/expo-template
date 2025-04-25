@@ -31,17 +31,17 @@ type PrefixedId<TableName extends string> = `${TableName}_${string}`;
 /**
  * Creates a custom type that automatically prefixes UUIDs with the table name
  */
-export function createPrefixedUuid<TableName extends string>(tableNameFn: () => TableName) {
+export function createPrefixedUuid<TName extends string>(nameFn: () => TName) {
 	return customType<{
 		data: string;
-		driverData: PrefixedId<TableName>;
+		driverData: PrefixedId<TName>;
 	}>({
 		dataType: () => 'uuid',
-		fromDriver: (val): PrefixedId<TableName> => {
-			return `${tableNameFn()}_${val}` as PrefixedId<TableName>;
+		fromDriver: (val): PrefixedId<TName> => {
+			return `${nameFn()}_${val}` as PrefixedId<TName>;
 		},
 		toDriver: (val) => {
-			return extractUuid(val) as PrefixedId<TableName>;
+			return extractUuid(val) as PrefixedId<TName>;
 		},
 	});
 }

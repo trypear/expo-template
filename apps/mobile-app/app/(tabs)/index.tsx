@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { Image, Platform, StyleSheet } from "react-native";
+import { Button, Image, Platform, StyleSheet, Text } from "react-native";
 import { HelloWave } from "@/components/HelloWave";
 import ParallaxScrollView from "@/components/ParallaxScrollView";
 import { ThemedText } from "@/components/ThemedText";
@@ -8,6 +8,26 @@ import { ThemedView } from "@/components/ThemedView";
 import { useQuery } from "@tanstack/react-query";
 
 import { trpc } from "../../hooks/api";
+import { useSignIn, useSignOut, useUser } from "../../hooks/auth";
+
+function MobileAuth() {
+  const user = useUser();
+  const signIn = useSignIn();
+  const signOut = useSignOut();
+
+  return (
+    <>
+      <Text className="border-2 border-black pb-2 text-center text-xl font-semibold text-white">
+        {user?.name ?? "Not logged in"}
+      </Text>
+      <Button
+        onPress={() => (user ? signOut() : signIn())}
+        title={user ? "Sign Out" : "Sign In With Discord"}
+        color={"#5B65E9"}
+      />
+    </>
+  );
+}
 
 export default function HomeScreen() {
   const query = useQuery(trpc.post.all.queryOptions());
@@ -43,6 +63,9 @@ export default function HomeScreen() {
           {query.data?.length === 0 ? "LENGTH 0" : "LENGTH MORE THAN 0"}
         </ThemedText>
       </ThemedView>
+
+      <MobileAuth />
+
       <ThemedView style={styles.stepContainer}>
         <ThemedText type="subtitle">Step 2: Explore</ThemedText>
         <ThemedText>

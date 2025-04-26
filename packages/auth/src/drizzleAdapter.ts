@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
 import { and } from "drizzle-orm"
 
 import type {
@@ -20,11 +18,7 @@ export function CustomDrizzleAdapter(
 			return client
 				.insert(user)
 				.values(data)
-				.returning({
-					id: user.id,
-					email: user.email,
-					emailVerified: user.emailVerified
-				})
+				.returning()
 				.then(parseFirstEl) satisfies Awaitable<AdapterUser>
 		},
 		async getUser(userId: string) {

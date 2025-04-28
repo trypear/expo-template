@@ -1,12 +1,6 @@
-# create-t3-turbo
+# PearAI Expo Template
 
-> [!NOTE]
->
-> NextAuth setup now works for Expo app!
-
-> [!NOTE]
->
-> OAuth deployments are now working for preview deployments. Read [deployment guide](https://github.com/t3-oss/create-t3-turbo#auth-proxy) and [check out the source](./apps/auth-proxy) to learn more!
+This template is based off of the amazing [Create-T3-Turbo](https://github.com/t3-oss/create-t3-turbo) template.
 
 ## Installation
 
@@ -37,21 +31,15 @@ It uses [Turborepo](https://turborepo.org) and contains:
 .vscode
   └─ Recommended extensions and settings for VSCode users
 apps
-  ├─ auth-proxy
-  |   ├─ Nitro server to proxy OAuth requests in preview deployments
-  |   └─ Uses Auth.js Core
   ├─ expo
-  |   ├─ Expo SDK 53 (EXPERIMENTAL)
-  |   |   > [!WARNING]
-  |   |   > Using Expo SDK 53 (canary) to unblock Next.js 15 / React 19 support.
-  |   |   > This is experimental and might not work as expected.
-  |   ├─ React Native using React 19
+  |   ├─ Expo SDK 52
+  |   ├─ React Native using React 18
   |   ├─ Navigation using Expo Router
   |   ├─ Tailwind using NativeWind
   |   └─ Typesafe API calls using tRPC
   └─ next.js
       ├─ Next.js 15
-      ├─ React 19
+      ├─ React 18
       ├─ Tailwind CSS
       └─ E2E Typesafe API Server & Client
 packages

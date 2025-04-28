@@ -38,9 +38,11 @@ export function createPrefixedUuid<TName extends string>(nameFn: () => TName) {
 	}>({
 		dataType: () => 'uuid',
 		fromDriver: (val): PrefixedId<TName> => {
+			console.log(`FROM DRIVER VAL: ${val} PREFIXED VAL:${nameFn()}_${val}`);
 			return `${nameFn()}_${val}` as PrefixedId<TName>;
 		},
 		toDriver: (val) => {
+			console.log(`TO DRIVER VAL: ${val} TO DRIVER UUID VAL: ${extractUuid(val)}`)
 			return extractUuid(val) as PrefixedId<TName>;
 		},
 	});
@@ -50,7 +52,8 @@ export function createPrefixedUuid<TName extends string>(nameFn: () => TName) {
  * Creates a primary key column with auto-generated UUID and table name prefix
  */
 export function pk<TableName extends string>(tableNameFn: () => TableName) {
-	return createPrefixedUuid<TableName>(tableNameFn)()
+	// Setting the prefix to be the table name Id
+	return createPrefixedUuid<TableName>(() => `${tableNameFn()}Id` as TableName)()
 		.primaryKey()
 		.notNull()
 		.default(sql`gen_random_uuid()`);
@@ -76,12 +79,10 @@ export function fk<
 		column?: () => AnyPgColumn
 	}
 ) {
-	// Extract the table name from the column name
-	const getTableName = () => {
-		return referencedTableFn()._.name;
-	};
+	// Simple function that prefixes the column name
+	const getColumnName = () => columnName as ExtractTableName<T>;
 
-	return createPrefixedUuid<ExtractTableName<T>>(getTableName as () => ExtractTableName<T>)(columnName)
+	return createPrefixedUuid<ExtractTableName<T>>(getColumnName)(columnName)
 		.notNull()
 		.references(() => (options?.column ? options.column() : referencedTableFn().id), {
 			onDelete: options?.onDelete,

@@ -12,10 +12,16 @@ export function CustomDrizzleAdapter(
 	client: Database,
 ): Adapter {
 	return {
-		async createUser(data: AdapterUser) {
+		async createUser({ email, emailVerified, id, image, name }: AdapterUser) {
 			return client
 				.insert(user)
-				.values(data)
+				.values({
+					email,
+					emailVerified,
+					id,
+					image,
+					name,
+				})
 				.returning()
 				.then(parseFirstEl) as Awaitable<AdapterUser>
 		},
@@ -38,21 +44,11 @@ export function CustomDrizzleAdapter(
 			userId: string
 			expires: Date
 		}) {
-			const { expires, sessionToken, userId } = data;
-
-			return client.insert(session).values({
-				expires,
-				sessionToken,
-				userId
-			}).returning().then(parseFirstEl);
+			return client.insert(session).values(data).returning().then(parseFirstEl);
 		},
 		async getSessionAndUser(sessionToken: string) {
-			// Make sure all columns are explicitly selected
 			return client
-				.select({
-					session: session,
-					user: user,
-				})
+				.select()
 				.from(session)
 				.where(eqi(session.sessionToken, sessionToken))
 				.innerJoin(user, eqi(user.id, session.userId))
@@ -84,13 +80,7 @@ export function CustomDrizzleAdapter(
 				.then(parseFirstEl) as Awaitable<AdapterSession>
 		},
 		async linkAccount(data: AdapterAccount) {
-			// Fix: use the correct property name providerAccountId with capital A
-			await client.insert(account).values({
-				...data,
-				// Make sure column names match what's defined in your schema
-				// If your column is indeed named provideraccountId (lowercase a), this mapping is needed
-				providerAccountId: data.providerAccountId
-			})
+			await client.insert(account).values(data)
 		},
 		async getUserByAccount(
 			accountData: Pick<AdapterAccount, "provider" | "providerAccountId">
@@ -104,8 +94,6 @@ export function CustomDrizzleAdapter(
 				.where(
 					and(
 						eqi(account.provider, accountData.provider),
-						// Fix: use the correct property name providerAccountId 
-						// Match this to your actual column name in the database
 						eqi(account.providerAccountId, accountData.providerAccountId)
 					)
 				)
@@ -128,7 +116,6 @@ export function CustomDrizzleAdapter(
 				.where(
 					and(
 						eqi(account.provider, params.provider),
-						// Fix: use the correct property name
 						eqi(account.providerAccountId, params.providerAccountId)
 					)
 				)
@@ -138,7 +125,6 @@ export function CustomDrizzleAdapter(
 				.select({
 					userId: account.userId,
 					type: account.type,
-					// Make sure to use the correct column name
 					providerAccountId: account.providerAccountId,
 					expires_at: account.expires_at,
 					provider: account.provider,

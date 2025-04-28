@@ -18,7 +18,6 @@ export const useTest = () => {
 export const signIn = async () => {
   const signInUrl = `${getBaseUrl()}/api/auth/signin`;
   const redirectTo = Linking.createURL("/login");
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const result = await Browser.openAuthSessionAsync(
     `${signInUrl}?expo-redirect=${encodeURIComponent(redirectTo)}`,
     redirectTo,

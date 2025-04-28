@@ -38,11 +38,9 @@ export function createPrefixedUuid<TName extends string>(nameFn: () => TName) {
 	}>({
 		dataType: () => 'uuid',
 		fromDriver: (val): PrefixedId<TName> => {
-			console.log(`FROM DRIVER VAL: ${val} PREFIXED VAL:${nameFn()}_${val}`);
 			return `${nameFn()}_${val}` as PrefixedId<TName>;
 		},
 		toDriver: (val) => {
-			console.log(`TO DRIVER VAL: ${val} TO DRIVER UUID VAL: ${extractUuid(val)}`)
 			return extractUuid(val) as PrefixedId<TName>;
 		},
 	});
@@ -79,7 +77,7 @@ export function fk<
 		column?: () => AnyPgColumn
 	}
 ) {
-	// Simple function that prefixes the column name
+	// Simple function that prefixes the column name (avoids circiular references with the table)
 	const getColumnName = () => columnName as ExtractTableName<T>;
 
 	return createPrefixedUuid<ExtractTableName<T>>(getColumnName)(columnName)

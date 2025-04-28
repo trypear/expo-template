@@ -40,18 +40,11 @@ export function CustomDrizzleAdapter(
 		}) {
 			const { expires, sessionToken, userId } = data;
 
-			await client.insert(session).values({
+			return client.insert(session).values({
 				expires,
 				sessionToken,
 				userId
-			})
-
-			// Construct the return object manually to avoid the mapping issue
-			return {
-				sessionToken,
-				userId,
-				expires,
-			};
+			}).returning().then(parseFirstEl);
 		},
 		async getSessionAndUser(sessionToken: string) {
 			// Make sure all columns are explicitly selected

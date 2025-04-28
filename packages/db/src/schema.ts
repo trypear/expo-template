@@ -96,7 +96,7 @@ export const account = createTable(
     session_state: varchar({ length: 255 }),
   },
   (t) => [
-    uniqueIndex("account_user_id_idx").on(t.userId)
+    index("account_user_id_idx").on(t.userId)
   ],
 );
 
@@ -109,7 +109,7 @@ export const session = createTable("session", {
   expires: timestamp({ mode: "date", withTimezone: true }).notNull(),
 },
   (t) => [
-    uniqueIndex("session_user_id_idx").on(t.userId, t.sessionToken)
+    index("session_token_idx").on(t.sessionToken)
   ]);
 
 export type Session = typeof session.$inferSelect;

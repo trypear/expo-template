@@ -86,7 +86,7 @@ export const account = createTable(
       .$type<"email" | "oauth" | "oidc" | "webauthn">()
       .notNull(),
     provider: varchar({ length: 255 }).notNull(),
-    provideraccountId: varchar({ length: 255 }).notNull(),
+    providerAccountId: varchar({ length: 255 }).notNull(),
     refresh_token: varchar({ length: 255 }),
     access_token: text(),
     expires_at: integer(),

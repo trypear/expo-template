@@ -65,7 +65,7 @@ type ExtractTableName<T> = T extends { _: { name: infer N extends string } } ? N
 
 /**
  * Creates a foreign key column referencing another table's ID with proper type prefixing
- * Uses lazy reference pattern to avoid circular dependencies
+ * Uses the column name as the ID type 
  */
 export function fk<
 	T extends { id: AnyPgColumn; _: { name: string } } & AnyPgTable

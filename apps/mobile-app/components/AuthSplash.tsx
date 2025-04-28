@@ -1,10 +1,11 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { useSignIn } from "@/hooks/auth";
+import { useSignIn, useTest } from "@/hooks/auth";
 import { useColorScheme } from "@/hooks/useColorScheme";
 
 export function AuthSplash() {
   const signIn = useSignIn();
+  const test = useTest();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
 
@@ -22,6 +23,7 @@ export function AuthSplash() {
         >
           Welcome
         </Text>
+        <Text>{JSON.stringify(test)}</Text>
         <Text
           style={[
             styles.subtitle,

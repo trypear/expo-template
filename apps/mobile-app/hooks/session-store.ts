@@ -20,7 +20,9 @@ const webImplementation = {
 		Cookies.set(key, v, {
 			expires: 365, // 1 year
 			secure: true,
-			sameSite: "strict"
+			sameSite: "lax",
+			domain: window.location.hostname,
+			path: "/"
 		});
 		return Promise.resolve();
 	},

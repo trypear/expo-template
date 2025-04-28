@@ -7,6 +7,14 @@ import { trpc } from "./api";
 import { getBaseUrl } from "./base-url";
 import { deleteToken, setToken } from "./session-store";
 
+export const useTest = () => {
+  const { data, isLoading } = useQuery(trpc.test.getHello.queryOptions());
+
+  if (isLoading) return null;
+
+  return data;
+}
+
 export const signIn = async () => {
   const signInUrl = `${getBaseUrl()}/api/auth/signin`;
   const redirectTo = Linking.createURL("/login");
@@ -24,8 +32,7 @@ export const signIn = async () => {
   const sessionToken = String(url.queryParams?.session_token);
   if (!sessionToken) throw new Error("No session token found");
 
-  setToken(sessionToken);
-
+  await setToken(sessionToken);
   return true;
 };
 
@@ -41,10 +48,46 @@ export const useSignIn = () => {
   const router = useRouter();
 
   return async () => {
+    console.log("Starting sign in process");
+
+    // Check if we're already on the login page with a session token
+    if (process.env.EXPO_OS === "web") {
+      console.log("Web platform detected, checking for session token");
+      const params = new URLSearchParams(window.location.search);
+      const sessionToken = params.get("session_token");
+      if (sessionToken) {
+        console.log("Session token found, processing login");
+        await setToken(sessionToken);
+        console.log("Token stored, refreshing queries");
+        await Promise.all([
+          queryClient.invalidateQueries(trpc.pathFilter()),
+          queryClient.refetchQueries(trpc.auth.getSession.queryOptions())
+        ]);
+        console.log("Queries refreshed, cleaning up URL and redirecting");
+        window.history.replaceState({}, '', '/');
+        // Small delay to ensure auth state is updated
+        await new Promise(resolve => setTimeout(resolve, 100));
+        router.replace("/");
+        return;
+      }
+    }
+
+    // Regular Expo auth flow
+    console.log("Starting regular auth flow");
     const success = await signIn();
+    console.log("Auth flow result:", success);
     if (!success) return;
 
-    await queryClient.invalidateQueries(trpc.pathFilter());
+    console.log("Auth successful, refreshing queries");
+    await Promise.all([
+      queryClient.invalidateQueries(trpc.pathFilter()),
+      queryClient.refetchQueries(trpc.auth.getSession.queryOptions())
+    ]);
+
+    console.log("Queries refreshed, waiting for state update");
+    // Small delay to ensure auth state is updated
+    await new Promise(resolve => setTimeout(resolve, 100));
+    console.log("Redirecting to home");
     router.replace("/");
   };
 };

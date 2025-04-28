@@ -6,5 +6,6 @@
       "persistent": true,
       "interactive": true
     }
-  }
+  },
+  "globalPassThroughEnv": ["EXPO_OS"]
 }

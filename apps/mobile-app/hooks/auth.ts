@@ -6,6 +6,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "./api";
 import { getBaseUrl } from "./base-url";
 import { deleteToken, setToken } from "./session-store";
+import { platform } from "./getPlatform";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 export const useTest = () => {
   const { data, isLoading } = useQuery(trpc.test.getHello.queryOptions());
@@ -18,8 +20,12 @@ export const useTest = () => {
 export const signIn = async () => {
   const signInUrl = `${getBaseUrl()}/api/auth/signin`;
   const redirectTo = Linking.createURL("/login");
+  const path = `${signInUrl}?expo-redirect=${encodeURIComponent(redirectTo)}`;
+  if (platform === "web") {
+    window.location.href = path;
+  }
   const result = await Browser.openAuthSessionAsync(
-    `${signInUrl}?expo-redirect=${encodeURIComponent(redirectTo)}`,
+    path,
     redirectTo,
   );
 
@@ -37,9 +43,44 @@ export const signIn = async () => {
 
 export const useUser = () => {
   const { data: session, isLoading } = useQuery(trpc.auth.getSession.queryOptions());
+  const queryClient = useQueryClient();
+  const [checkedWeb, setCheckedWeb] = useState(false);
 
-  if (isLoading) return null;
-  return session?.user ?? null;
+  const token = useMemo(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sessionToken = params.get("session_token");
+
+    return sessionToken;
+  }, []);
+
+  const checkForLogin = useCallback(async () => {
+    if (platform === "web" && token) {
+      console.log("Session token found, processing login");
+      await setToken(token);
+      console.log("Token stored, refreshing queries");
+      await Promise.all([
+        queryClient.invalidateQueries(trpc.pathFilter()),
+        queryClient.refetchQueries(trpc.auth.getSession.queryOptions())
+      ]);
+      console.log("Queries refreshed, redirecting");
+      // eslint-disable-next-line react-compiler/react-compiler
+      window.location.href = "/";
+      return;
+    }
+  }, [queryClient, token]);
+
+  useEffect(() => {
+    if (!checkedWeb && platform === "web") {
+      checkForLogin().then(() => setCheckedWeb(true)).catch(e => {
+        console.error("ERROR IN USE USER", e)
+      })
+    }
+  }, [setCheckedWeb, checkForLogin, checkedWeb]);
+
+
+
+  if (isLoading || (!checkedWeb && platform === "web")) return null;
+  return session?.user ?? false;
 };
 
 export const useSignIn = () => {
@@ -50,7 +91,7 @@ export const useSignIn = () => {
     console.log("Starting sign in process");
 
     // Check if we're already on the login page with a session token
-    if (process.env.EXPO_OS === "web") {
+    if (platform === "web") {
       console.log("Web platform detected, checking for session token");
       const params = new URLSearchParams(window.location.search);
       const sessionToken = params.get("session_token");
@@ -62,11 +103,8 @@ export const useSignIn = () => {
           queryClient.invalidateQueries(trpc.pathFilter()),
           queryClient.refetchQueries(trpc.auth.getSession.queryOptions())
         ]);
-        console.log("Queries refreshed, cleaning up URL and redirecting");
-        window.history.replaceState({}, '', '/');
-        // Small delay to ensure auth state is updated
-        await new Promise(resolve => setTimeout(resolve, 100));
-        router.replace("/");
+        console.log("Queries refreshed, redirecting");
+        window.location.href = "/";
         return;
       }
     }
@@ -83,10 +121,7 @@ export const useSignIn = () => {
       queryClient.refetchQueries(trpc.auth.getSession.queryOptions())
     ]);
 
-    console.log("Queries refreshed, waiting for state update");
-    // Small delay to ensure auth state is updated
-    await new Promise(resolve => setTimeout(resolve, 100));
-    console.log("Redirecting to home");
+    console.log("Queries refreshed, redirecting");
     router.replace("/");
   };
 };
@@ -101,6 +136,10 @@ export const useSignOut = () => {
     if (!res.success) return;
     await deleteToken();
     await queryClient.invalidateQueries(trpc.pathFilter());
-    router.replace("/");
+    if (platform === "web") {
+      window.location.href = "/";
+    } else {
+      router.replace("/");
+    }
   };
 };

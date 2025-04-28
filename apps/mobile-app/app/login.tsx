@@ -1,3 +1,4 @@
+import { Text } from "react-native";
 import { Redirect } from "expo-router";
 import { AuthSplash } from "@/components/AuthSplash";
 import { useUser } from "@/hooks/auth";
@@ -5,9 +6,14 @@ import { useUser } from "@/hooks/auth";
 export default function Login() {
   const user = useUser();
 
-  if (user) {
-    return <Redirect href="/" />;
+  // loading screen
+  if (user === null) {
+    return <Text>Loading...</Text>;
   }
 
-  return <AuthSplash />;
+  if (user === false) {
+    return <AuthSplash />;
+  }
+
+  return <Redirect href="/" />;
 }

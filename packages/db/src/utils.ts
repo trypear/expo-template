@@ -31,17 +31,17 @@ type PrefixedId<TableName extends string> = `${TableName}_${string}`;
 /**
  * Creates a custom type that automatically prefixes UUIDs with the table name
  */
-export function createPrefixedUuid<TName extends string>(nameFn: () => TName) {
+export function createPrefixedUuid<TIdName extends string>(nameFn: () => TIdName) {
 	return customType<{
 		data: string;
-		driverData: PrefixedId<TName>;
+		driverData: PrefixedId<TIdName>;
 	}>({
 		dataType: () => 'uuid',
-		fromDriver: (val): PrefixedId<TName> => {
-			return `${nameFn()}_${val}` as PrefixedId<TName>;
+		fromDriver: (val): PrefixedId<TIdName> => {
+			return `${nameFn()}_${val}` as PrefixedId<TIdName>;
 		},
 		toDriver: (val) => {
-			return extractUuid(val) as PrefixedId<TName>;
+			return extractUuid(val) as PrefixedId<TIdName>;
 		},
 	});
 }
@@ -50,8 +50,9 @@ export function createPrefixedUuid<TName extends string>(nameFn: () => TName) {
  * Creates a primary key column with auto-generated UUID and table name prefix
  */
 export function pk<TableName extends string>(tableNameFn: () => TableName) {
+	type IdName = `${TableName}Id`;
 	// Setting the prefix to be the table name Id
-	return createPrefixedUuid<TableName>(() => `${tableNameFn()}Id` as TableName)()
+	return createPrefixedUuid<IdName>(() => `${tableNameFn()}Id`)()
 		.primaryKey()
 		.notNull()
 		.default(sql`gen_random_uuid()`);
@@ -77,10 +78,12 @@ export function fk<
 		column?: () => AnyPgColumn
 	}
 ) {
-	// Simple function that prefixes the column name (avoids circiular references with the table)
-	const getColumnName = () => columnName as ExtractTableName<T>;
 
-	return createPrefixedUuid<ExtractTableName<T>>(getColumnName)(columnName)
+	type TIdName = `${ExtractTableName<T>}Id`
+	// Simple function that prefixes the column name (avoids circiular references with the table)
+	const getColumnName = () => columnName as TIdName;
+
+	return createPrefixedUuid<TIdName>(getColumnName)(columnName)
 		.notNull()
 		.references(() => (options?.column ? options.column() : referencedTableFn().id), {
 			onDelete: options?.onDelete,

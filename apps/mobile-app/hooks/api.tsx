@@ -39,11 +39,11 @@ export const trpc = createTRPCOptionsProxy<AppRouter>({
             clearTimeout(timeoutId);
           });
         },
-        headers() {
+        async headers() {
           const headers = new Map<string, string>();
           headers.set("x-trpc-source", "expo-react");
 
-          const token = getToken();
+          const token = await getToken();
           if (token) headers.set("Authorization", `Bearer ${token}`);
 
           return Object.fromEntries(headers);

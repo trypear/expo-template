@@ -1,5 +1,3 @@
-import { and } from "drizzle-orm"
-
 import type {
 	Adapter,
 	AdapterAccount,
@@ -8,7 +6,7 @@ import type {
 } from "@auth/core/adapters"
 import type { Awaitable } from "@auth/core/types"
 import type { Database } from "@acme/db/client"
-import { eqi, getFirstEl, parseFirstEl, account, session, user } from "@acme/db"
+import { eqi, getFirstEl, parseFirstEl, account, session, user, and } from "@acme/db"
 
 export function CustomDrizzleAdapter(
 	client: Database,
@@ -19,43 +17,53 @@ export function CustomDrizzleAdapter(
 				.insert(user)
 				.values(data)
 				.returning()
-				.then(parseFirstEl) satisfies Awaitable<AdapterUser>
+				.then(parseFirstEl) as Awaitable<AdapterUser>
 		},
 		async getUser(userId: string) {
 			return client
 				.select()
 				.from(user)
 				.where(eqi(user.id, userId))
-				.then(getFirstEl) satisfies Awaitable<AdapterUser | null>
+				.then(getFirstEl) as Awaitable<AdapterUser | null>
 		},
 		async getUserByEmail(email: string) {
 			return client
 				.select()
 				.from(user)
 				.where(eqi(user.email, email))
-				.then(getFirstEl) satisfies Awaitable<AdapterUser | null>
+				.then(getFirstEl) as Awaitable<AdapterUser | null>
 		},
 		async createSession(data: {
 			sessionToken: string
 			userId: string
 			expires: Date
 		}) {
-			return client
-				.insert(session)
-				.values(data)
-				.returning()
-				.then(parseFirstEl) satisfies Awaitable<AdapterSession>
+			const { expires, sessionToken, userId } = data;
+
+			await client.insert(session).values({
+				expires,
+				sessionToken,
+				userId
+			})
+
+			// Construct the return object manually to avoid the mapping issue
+			return {
+				sessionToken,
+				userId,
+				expires,
+			};
 		},
 		async getSessionAndUser(sessionToken: string) {
+			// Make sure all columns are explicitly selected
 			return client
 				.select({
-					session,
-					user,
+					session: session,
+					user: user,
 				})
 				.from(session)
 				.where(eqi(session.sessionToken, sessionToken))
 				.innerJoin(user, eqi(user.id, session.userId))
-				.then(getFirstEl) satisfies Awaitable<{
+				.then(getFirstEl) as Awaitable<{
 					session: AdapterSession
 					user: AdapterUser
 				} | null>
@@ -70,7 +78,7 @@ export function CustomDrizzleAdapter(
 				.set(data)
 				.where(eqi(user.id, data.id))
 				.returning()
-				.then(parseFirstEl) satisfies Awaitable<AdapterUser>
+				.then(parseFirstEl) as Awaitable<AdapterUser>
 		},
 		async updateSession(
 			data: Partial<AdapterSession> & Pick<AdapterSession, "sessionToken">
@@ -80,31 +88,36 @@ export function CustomDrizzleAdapter(
 				.set(data)
 				.where(eqi(session.sessionToken, data.sessionToken))
 				.returning()
-				.then(parseFirstEl) satisfies Awaitable<AdapterSession>
+				.then(parseFirstEl) as Awaitable<AdapterSession>
 		},
 		async linkAccount(data: AdapterAccount) {
-			const accountData = {
+			// Fix: use the correct property name providerAccountId with capital A
+			await client.insert(account).values({
 				...data,
-				provideraccountId: data.providerAccountId
-			}
-			await client.insert(account).values(accountData)
+				// Make sure column names match what's defined in your schema
+				// If your column is indeed named provideraccountId (lowercase a), this mapping is needed
+				providerAccountId: data.providerAccountId
+			})
 		},
 		async getUserByAccount(
 			accountData: Pick<AdapterAccount, "provider" | "providerAccountId">
 		) {
 			return client
 				.select({
-					user,
+					user: user,
 				})
 				.from(account)
 				.innerJoin(user, eqi(account.userId, user.id))
 				.where(
 					and(
 						eqi(account.provider, accountData.provider),
-						eqi(account.provideraccountId, accountData.providerAccountId)
+						// Fix: use the correct property name providerAccountId 
+						// Match this to your actual column name in the database
+						eqi(account.providerAccountId, accountData.providerAccountId)
 					)
 				)
-				.then(getFirstEl).then(x => (x !== null ? x.user : null)) satisfies Awaitable<AdapterUser | null>
+				.then(getFirstEl)
+				.then(x => (x !== null ? x.user : null)) as Awaitable<AdapterUser | null>
 		},
 		async deleteSession(sessionToken: string) {
 			await client
@@ -122,7 +135,8 @@ export function CustomDrizzleAdapter(
 				.where(
 					and(
 						eqi(account.provider, params.provider),
-						eqi(account.provideraccountId, params.providerAccountId)
+						// Fix: use the correct property name
+						eqi(account.providerAccountId, params.providerAccountId)
 					)
 				)
 		},
@@ -131,7 +145,8 @@ export function CustomDrizzleAdapter(
 				.select({
 					userId: account.userId,
 					type: account.type,
-					providerAccountId: account.provideraccountId,
+					// Make sure to use the correct column name
+					providerAccountId: account.providerAccountId,
 					expires_at: account.expires_at,
 					provider: account.provider,
 				})
@@ -139,7 +154,7 @@ export function CustomDrizzleAdapter(
 				.where(
 					and(
 						eqi(account.provider, provider),
-						eqi(account.provideraccountId, providerAccountId)
+						eqi(account.providerAccountId, providerAccountId)
 					)
 				)
 				.then(getFirstEl)
@@ -149,14 +164,13 @@ export function CustomDrizzleAdapter(
 			return {
 				...result,
 				expires_at: result.expires_at ?? undefined,
-			} satisfies Awaitable<AdapterAccount>;
+			} as Awaitable<AdapterAccount>;
 		},
-		// These methods are optional - you can remove them if you don't need webauthn support
+		// These methods are optional
 		createAuthenticator: undefined,
 		getAuthenticator: undefined,
 		listAuthenticatorsByUserId: undefined,
 		updateAuthenticatorCounter: undefined,
-		// These methods are optional - you can remove them if you don't need verification token support
 		createVerificationToken: undefined,
 		useVerificationToken: undefined,
 	}

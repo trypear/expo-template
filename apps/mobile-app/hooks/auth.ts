@@ -22,7 +22,9 @@ export const signIn = async () => {
   const redirectTo = Linking.createURL("/login");
   const path = `${signInUrl}?expo-redirect=${encodeURIComponent(redirectTo)}`;
   if (platform === "web") {
-    window.location.href = path;
+    // Handle web auth synchronously in the same tab
+    window.location.assign(path);
+    return true;
   }
   const result = await Browser.openAuthSessionAsync(
     path,
@@ -47,14 +49,16 @@ export const useUser = () => {
   const [checkedWeb, setCheckedWeb] = useState(false);
 
   const token = useMemo(() => {
-    const params = new URLSearchParams(window.location.search);
-    const sessionToken = params.get("session_token");
+    if (platform === "web") {
+      const params = new URLSearchParams(window.location.search);
+      const sessionToken = params.get("session_token");
 
-    return sessionToken;
+      return sessionToken;
+    }
   }, []);
 
   const checkForLogin = useCallback(async () => {
-    if (platform === "web" && token) {
+    if (token) {
       console.log("Session token found, processing login");
       await setToken(token);
       console.log("Token stored, refreshing queries");

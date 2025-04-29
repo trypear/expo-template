@@ -1,7 +1,7 @@
 "use client";
 
 import { Image, StyleSheet, View } from "react-native";
-import { router, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 // @ts-expect-error Image import
 import headerLogo from "@/assets/images/partial-react-logo.png";
 import { LoadingScreen } from "@/components/LoadingScreen";
@@ -15,6 +15,7 @@ import { useQuery } from "@tanstack/react-query";
 
 export default function ProjectScreen() {
   const { id } = useLocalSearchParams();
+  const router = useRouter();
   const projectId = typeof id === "string" ? id : id?.[0];
 
   const { data: project, isLoading: isLoadingProject } = useQuery(
@@ -126,6 +127,7 @@ export default function ProjectScreen() {
             <ThemedText type="subtitle">Budgets</ThemedText>
             <Button
               onPress={() => router.push(`/project/${projectId}/budget/new`)}
+              variant="default"
             >
               New Budget
             </Button>
@@ -185,6 +187,7 @@ export default function ProjectScreen() {
               onPress={() =>
                 router.push(`/project/${projectId}/transaction/new`)
               }
+              variant="default"
             >
               New Transaction
             </Button>

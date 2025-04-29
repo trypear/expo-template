@@ -19,6 +19,8 @@ export const Colors = {
     positive: '#34C759',
     negative: '#FF3B30',
     secondaryText: '#687076',
+    btnColor: "#11181C",
+    btnText: "#000000"
   },
   dark: {
     text: '#ECEDEE',
@@ -32,5 +34,7 @@ export const Colors = {
     positive: '#32D74B',
     negative: '#FF453A',
     secondaryText: '#9BA1A6',
+    btnColor: "#FFFFFF",
+    btnText: "#11181C"
   },
 };

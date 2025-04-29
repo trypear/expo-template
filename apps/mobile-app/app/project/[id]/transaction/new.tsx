@@ -137,10 +137,14 @@ export default function NewTransactionScreen() {
         </View>
 
         <View style={styles.buttons}>
-          <Button onPress={() => router.back()} variant="ghost">
+          <Button onPress={() => router.back()} variant="outline">
             Cancel
           </Button>
-          <Button onPress={handleSubmit} disabled={!amount.trim() || isPending}>
+          <Button
+            onPress={handleSubmit}
+            disabled={!amount.trim() || isPending}
+            variant="default"
+          >
             {isPending ? "Creating..." : "Create Transaction"}
           </Button>
         </View>

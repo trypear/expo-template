@@ -25,4 +25,5 @@ export const getBaseUrl = () => {
   //   );
   // }
   return `https://deathmail-mac.j4a.uk`;
+  // return "http://192.168.68.64:3000"
 };

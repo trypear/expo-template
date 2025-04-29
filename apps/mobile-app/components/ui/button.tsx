@@ -5,6 +5,8 @@ import {
   StyleSheet,
   ViewStyle,
 } from "react-native";
+import { Colors } from "@/constants/Colors";
+import { useColorScheme } from "@/hooks/useColorScheme";
 
 import { ThemedText } from "../ThemedText";
 
@@ -14,68 +16,84 @@ interface ButtonProps extends Omit<PressableProps, "style"> {
   style?: StyleProp<ViewStyle>;
 }
 
-export function Button({
-  variant = "default",
-  children,
-  style,
-  ...props
-}: ButtonProps) {
-  return (
-    <Pressable
-      style={(state) => {
-        const baseStyles = [
-          styles.button,
-          styles[variant],
-          state.pressed && styles.pressed,
-          style,
-        ] as StyleProp<ViewStyle>[];
-        return baseStyles.filter(Boolean);
-      }}
-      {...props}
-    >
-      <ThemedText
-        style={[
-          styles.text,
-          variant === "ghost" && styles.ghostText,
-          variant === "outline" && styles.outlineText,
-        ]}
-      >
-        {children}
-      </ThemedText>
-    </Pressable>
-  );
-}
-
-const styles = StyleSheet.create({
+const baseStyles = StyleSheet.create({
   button: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
     justifyContent: "center",
     alignItems: "center",
-  },
-  default: {
-    backgroundColor: "#A1CEDC",
-  },
-  outline: {
-    backgroundColor: "transparent",
-    borderWidth: 1,
-    borderColor: "#A1CEDC",
-  },
-  ghost: {
-    backgroundColor: "transparent",
+    minWidth: 100,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 2,
   },
   pressed: {
     opacity: 0.7,
-  },
-  text: {
-    color: "#000000",
-    fontWeight: "500",
-  },
-  outlineText: {
-    color: "#A1CEDC",
-  },
-  ghostText: {
-    color: "#A1CEDC",
+    transform: [{ scale: 0.98 }],
   },
 });
+
+export function Button({
+  variant = "default",
+  children,
+  style,
+  ...props
+}: ButtonProps) {
+  const colorScheme = useColorScheme() ?? "light";
+
+  const getButtonStyle = (): StyleProp<ViewStyle> => {
+    const colors = Colors[colorScheme];
+
+    switch (variant) {
+      case "default":
+        return {
+          backgroundColor: colors.btnColor,
+          shadowColor: colors.cardBorder,
+        };
+      case "outline":
+        return {
+          backgroundColor: "transparernt",
+          borderWidth: 1,
+          borderColor: colors.btnColor,
+        };
+      case "ghost":
+      default:
+        return {
+          backgroundColor: "transparent",
+          borderColor: colors.btnColor,
+        };
+    }
+  };
+
+  const getTextStyle = () => {
+    const colors = Colors[colorScheme];
+    return {
+      fontWeight: "600" as const,
+      fontSize: 14,
+      letterSpacing: 0.15,
+      color:
+        variant === "default"
+          ? colors.btnText
+          : variant === "ghost"
+            ? colors.secondaryText
+            : colors.tint,
+    };
+  };
+
+  return (
+    <Pressable
+      style={(state) => [
+        baseStyles.button,
+        getButtonStyle(),
+        state.pressed && baseStyles.pressed,
+        style,
+      ]}
+      {...props}
+    >
+      <ThemedText style={getTextStyle()}>{children}</ThemedText>
+    </Pressable>
+  );
+}

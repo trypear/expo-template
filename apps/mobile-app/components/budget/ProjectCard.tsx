@@ -86,20 +86,53 @@ export function ProjectCard({ id, name, description }: ProjectCardProps) {
             },
           ]}
         >
-          <ThemedText
-            style={styles.statsLabel}
-            lightColor={Colors.light.secondaryText}
-            darkColor={Colors.dark.secondaryText}
-          >
-            Budget: ${totalBudget.toFixed(2)}
-          </ThemedText>
-          <ThemedText
-            style={styles.statsLabel}
-            lightColor={Colors.light.secondaryText}
-            darkColor={Colors.dark.secondaryText}
-          >
-            {transactions?.length ?? 0} transactions
-          </ThemedText>
+          <View>
+            <ThemedText
+              style={styles.statsLabel}
+              lightColor={Colors.light.secondaryText}
+              darkColor={Colors.dark.secondaryText}
+            >
+              Budget: ${totalBudget.toFixed(2)}
+            </ThemedText>
+            <ThemedText
+              style={[
+                styles.budgetStatus,
+                Math.abs(netTransactions) > totalBudget
+                  ? styles.overBudget
+                  : styles.withinBudget,
+              ]}
+              lightColor={
+                Math.abs(netTransactions) > totalBudget
+                  ? Colors.light.negative
+                  : Colors.light.positive
+              }
+              darkColor={
+                Math.abs(netTransactions) > totalBudget
+                  ? Colors.dark.negative
+                  : Colors.dark.positive
+              }
+            >
+              {totalBudget > 0
+                ? `${((Math.abs(netTransactions) / totalBudget) * 100).toFixed(1)}% used`
+                : "No budget set"}
+            </ThemedText>
+          </View>
+          <View>
+            <ThemedText
+              style={styles.statsLabel}
+              lightColor={Colors.light.secondaryText}
+              darkColor={Colors.dark.secondaryText}
+            >
+              {transactions?.length ?? 0} transactions
+            </ThemedText>
+            <ThemedText
+              style={styles.statsLabel}
+              lightColor={Colors.light.secondaryText}
+              darkColor={Colors.dark.secondaryText}
+            >
+              ${Math.abs(netTransactions).toFixed(2)} spent
+            </ThemedText>
+          </View>
         </View>
       </ThemedView>
     </Pressable>
@@ -146,6 +179,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
   },
+  budgetStatus: {
+    fontSize: 12,
+    fontWeight: "600",
+    marginTop: 2,
+  },
+  overBudget: {},
+  withinBudget: {},
   positive: {},
   negative: {},
 });

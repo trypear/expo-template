@@ -4,6 +4,7 @@ import { Image, StyleSheet, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 // @ts-expect-error Image import
 import headerLogo from "@/assets/images/partial-react-logo.png";
+import { LoadingScreen } from "@/components/LoadingScreen";
 import ParallaxScrollView from "@/components/ParallaxScrollView";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
@@ -16,19 +17,19 @@ export default function ProjectScreen() {
   const { id } = useLocalSearchParams();
   const projectId = typeof id === "string" ? id : id?.[0];
 
-  const { data: project } = useQuery(
+  const { data: project, isLoading: isLoadingProject } = useQuery(
     trpc.budget.getProject.queryOptions({
       id: projectId ?? "_",
     }),
   );
 
-  const { data: budgets } = useQuery(
+  const { data: budgets, isLoading: isLoadingBudgets } = useQuery(
     trpc.budget.getProjectBudgets.queryOptions({
       projectId: projectId ?? "_",
     }),
   );
 
-  const { data: transactions } = useQuery(
+  const { data: transactions, isLoading: isLoadingTransactions } = useQuery(
     trpc.budget.getProjectTransactions.queryOptions({
       projectId: projectId ?? "_",
     }),
@@ -40,6 +41,10 @@ export default function ProjectScreen() {
   }
 
   const projectData = project?.[0];
+
+  if (isLoadingProject || isLoadingBudgets || isLoadingTransactions) {
+    return <LoadingScreen message="Loading project details..." />;
+  }
 
   if (!projectData) {
     return (

@@ -62,6 +62,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 24,
+    marginTop: 48,
   },
   emptyState: {
     flex: 1,

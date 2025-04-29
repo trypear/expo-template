@@ -20,7 +20,16 @@ export const Colors = {
     negative: '#FF3B30',
     secondaryText: '#687076',
     btnColor: "#11181C",
-    btnText: "#000000"
+    btnText: "#000000",
+    // New colors for charts and cards
+    chartLine: '#0a7ea4',
+    chartGrid: '#E5E7EB',
+    chartBar: '#60A5FA',
+    chartBarSecondary: '#93C5FD',
+    cardHighlight: '#F0F9FF',
+    cardShadow: 'rgba(0,0,0,0.05)',
+    incomeText: '#059669',
+    expenseText: '#DC2626',
   },
   dark: {
     text: '#ECEDEE',
@@ -35,6 +44,15 @@ export const Colors = {
     negative: '#FF453A',
     secondaryText: '#9BA1A6',
     btnColor: "#FFFFFF",
-    btnText: "#11181C"
+    btnText: "#11181C",
+    // New colors for charts and cards
+    chartLine: '#60A5FA',
+    chartGrid: '#374151',
+    chartBar: '#3B82F6',
+    chartBarSecondary: '#60A5FA',
+    cardHighlight: '#1E3A8A',
+    cardShadow: 'rgba(0,0,0,0.2)',
+    incomeText: '#34D399',
+    expenseText: '#F87171',
   },
 };

@@ -5,6 +5,7 @@ import { router } from "expo-router";
 import { Colors } from "@/constants/Colors";
 import { trpc } from "@/hooks/api";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { formatCurrency } from "@/utils/formatCurrency";
 import { useQuery } from "@tanstack/react-query";
 
 import { ThemedText } from "../ThemedText";
@@ -15,7 +16,6 @@ interface ProjectCardProps {
   name: string;
   description?: string;
 }
-
 export function ProjectCard({ id, name, description }: ProjectCardProps) {
   const { data: budgets } = useQuery(
     trpc.budget.getProjectBudgets.queryOptions({ projectId: id }),
@@ -58,8 +58,10 @@ export function ProjectCard({ id, name, description }: ProjectCardProps) {
             darkColor={
               netTransactions >= 0 ? Colors.dark.positive : Colors.dark.negative
             }
+            adjustsFontSizeToFit
+            numberOfLines={1}
           >
-            ${Math.abs(netTransactions).toFixed(2)}
+            {formatCurrency(Math.abs(netTransactions))}
             {netTransactions >= 0 ? " +" : " -"}
           </ThemedText>
         </View>
@@ -92,7 +94,7 @@ export function ProjectCard({ id, name, description }: ProjectCardProps) {
               lightColor={Colors.light.secondaryText}
               darkColor={Colors.dark.secondaryText}
             >
-              Budget: ${totalBudget.toFixed(2)}
+              Budget: {formatCurrency(totalBudget)}
             </ThemedText>
             <ThemedText
               style={[
@@ -130,7 +132,7 @@ export function ProjectCard({ id, name, description }: ProjectCardProps) {
               lightColor={Colors.light.secondaryText}
               darkColor={Colors.dark.secondaryText}
             >
-              ${Math.abs(netTransactions).toFixed(2)} spent
+              {formatCurrency(Math.abs(netTransactions))} spent
             </ThemedText>
           </View>
         </View>
@@ -157,10 +159,30 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    gap: 8,
+  },
+  titleRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   title: {
     flex: 1,
     marginRight: 12,
+  },
+  deleteButton: {
+    minHeight: 40,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: Colors.light.cardBorder,
+  },
+  deleteText: {
+    fontSize: 14,
+    fontWeight: "600",
   },
   description: {
     marginTop: 8,
@@ -173,14 +195,15 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
   },
   statsLabel: {
-    fontSize: 12,
+    fontSize: 10,
   },
   balance: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "600",
+    flexShrink: 1,
   },
   budgetStatus: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: "600",
     marginTop: 2,
   },

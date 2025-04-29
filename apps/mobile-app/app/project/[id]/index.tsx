@@ -1,6 +1,7 @@
 "use client";
 
-import { Image, StyleSheet, View } from "react-native";
+import { Alert, Image, StyleSheet, View } from "react-native";
+import { LineChart } from "react-native-gifted-charts";
 import { useLocalSearchParams, useRouter } from "expo-router";
 // @ts-expect-error Image import
 import headerLogo from "@/assets/images/partial-react-logo.png";
@@ -11,11 +12,13 @@ import { ThemedView } from "@/components/ThemedView";
 import { Button } from "@/components/ui/button";
 import { Colors } from "@/constants/Colors";
 import { trpc } from "@/hooks/api";
-import { useQuery } from "@tanstack/react-query";
+import { platform } from "@/hooks/getPlatform";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export default function ProjectScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const projectId = typeof id === "string" ? id : id?.[0];
 
   const { data: project, isLoading: isLoadingProject } = useQuery(
@@ -23,6 +26,44 @@ export default function ProjectScreen() {
       id: projectId ?? "_",
     }),
   );
+
+  const { mutate: deleteProject } = useMutation(
+    trpc.budget.deleteProject.mutationOptions({
+      onSuccess: () => {
+        void queryClient.invalidateQueries(
+          trpc.budget.getProjects.queryOptions(),
+        );
+        router.replace("/");
+      },
+    }),
+  );
+
+  const handleDelete = () => {
+    if (!projectId) return;
+
+    if (platform === "web") {
+      if (
+        window.confirm(
+          "Are you sure you want to delete this project? This action cannot be undone.",
+        )
+      ) {
+        deleteProject({ id: projectId });
+      }
+    } else {
+      Alert.alert(
+        "Delete Project",
+        "Are you sure you want to delete this project? This action cannot be undone.",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: () => deleteProject({ id: projectId }),
+          },
+        ],
+      );
+    }
+  };
 
   const { data: budgets, isLoading: isLoadingBudgets } = useQuery(
     trpc.budget.getProjectBudgets.queryOptions({
@@ -67,10 +108,47 @@ export default function ProjectScreen() {
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
-      headerImage={<Image source={headerLogo} style={styles.headerImage} />}
+      headerImage={
+        transactions?.length ? (
+          <View style={styles.headerImage}>
+            <LineChart
+              areaChart
+              curved
+              data={transactions
+                .map((t) => ({
+                  value:
+                    t.transaction.type === "INCOMING"
+                      ? Number(t.transaction.amount)
+                      : -Number(t.transaction.amount),
+                  date: new Date(t.transaction.date),
+                }))
+                .sort((a, b) => a.date.getTime() - b.date.getTime())
+                .map((t) => ({ value: t.value }))}
+              height={178}
+              width={290}
+              showVerticalLines
+              initialSpacing={0}
+              color1="skyblue"
+              textColor1="white"
+              hideDataPoints
+              dataPointsColor1="blue"
+              startFillColor1="skyblue"
+              startOpacity={0.8}
+              endOpacity={0.3}
+            />
+          </View>
+        ) : (
+          <Image source={headerLogo} style={styles.headerImage} />
+        )
+      }
     >
       <ThemedView style={styles.container}>
-        <ThemedText type="title">{projectData.name}</ThemedText>
+        <View style={styles.sectionHeader}>
+          <ThemedText type="title">{projectData.name}</ThemedText>
+          <Button variant="outline" onPress={handleDelete}>
+            Delete Project
+          </Button>
+        </View>
         {projectData.description && (
           <ThemedText style={styles.description}>
             {projectData.description}

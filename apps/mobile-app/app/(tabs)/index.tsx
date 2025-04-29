@@ -10,6 +10,21 @@ import { trpc } from "@/hooks/api";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useQuery } from "@tanstack/react-query";
 
+const MONTH_NAMES = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
 interface MonthlyTotal {
   income: number;
   expense: number;
@@ -20,6 +35,13 @@ interface DateParts {
   year: number;
 }
 
+interface SummaryCardProps {
+  label: string;
+  value: number;
+  color: string;
+  backgroundColor: string;
+}
+
 const parseDateString = (dateStr: string): DateParts => {
   const [monthStr = "1", yearStr = "2000"] = dateStr.split("/");
   return {
@@ -28,22 +50,80 @@ const parseDateString = (dateStr: string): DateParts => {
   };
 };
 
+const SummaryCard = ({
+  label,
+  value,
+  color,
+  backgroundColor,
+}: SummaryCardProps) => (
+  <View style={[styles.summaryCard, { backgroundColor }]}>
+    <ThemedText style={styles.summaryLabel}>{label}</ThemedText>
+    <ThemedText type="title" style={{ color }}>
+      ${value.toFixed(2)}
+    </ThemedText>
+  </View>
+);
+
+const ChartContainer = ({
+  title,
+  children,
+  colors,
+  noData,
+}: {
+  title: string;
+  children: React.ReactNode;
+  colors: typeof Colors.light;
+  noData?: boolean;
+}) => (
+  <View
+    style={[styles.chartContainer, { backgroundColor: colors.cardBackground }]}
+  >
+    <ThemedText type="subtitle" style={styles.chartTitle}>
+      {title}
+    </ThemedText>
+    {noData && (
+      <ThemedText style={styles.noDataText}>
+        No {title.toLowerCase()} data available
+      </ThemedText>
+    )}
+    {children}
+  </View>
+);
+
+const commonChartProps = (colors: typeof Colors.light) => ({
+  height: 200,
+  width: 350,
+  spacing: 90,
+  initialSpacing: 40,
+  endSpacing: 40,
+  xAxisColor: colors.chartGrid,
+  yAxisColor: colors.chartGrid,
+  yAxisTextStyle: { color: colors.text },
+  xAxisLabelTextStyle: {
+    color: colors.text,
+    width: 90,
+    textAlign: "center",
+    fontSize: 12,
+    marginTop: 8,
+  },
+  yAxisThickness: 1,
+  xAxisThickness: 1,
+  noOfSections: 5,
+});
+
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
 
-  // Get all projects
   const { data: projects } = useQuery(trpc.budget.getProjects.queryOptions());
   const projectId = projects?.[0]?.id;
 
-  // Memoize the start date to prevent refresh loops
   const startDate = useMemo(() => {
     const date = new Date();
     date.setMonth(date.getMonth() - 6);
     return date;
   }, []);
 
-  // Get transactions for the first project
   const { data: transactions } = useQuery(
     trpc.budget.getProjectTransactions.queryOptions({
       projectId: projectId ?? "",
@@ -51,66 +131,36 @@ export default function HomeScreen() {
     }),
   );
 
-  // Get budgets for the first project
   const { data: budgets } = useQuery(
     trpc.budget.getProjectBudgets.queryOptions({
       projectId: projectId ?? "",
     }),
   );
 
-  // Process transaction data for line chart
   const lineData = useMemo(() => {
     if (!transactions?.length) {
       const now = new Date();
-      const monthNames = [
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dec",
-      ];
       const month = now.getMonth();
       const year = now.getFullYear();
       return [
         {
           value: 0,
-          label: `${monthNames[month]}\n${year}`,
+          label: `${MONTH_NAMES[month]}\n${year}`,
           frontColor: colors.secondaryText,
         },
         {
           value: 0,
-          label: `${monthNames[(month + 1) % 12]}\n${year}`,
+          label: `${MONTH_NAMES[(month + 1) % 12]}\n${year}`,
           frontColor: colors.secondaryText,
         },
       ];
     }
 
     const monthlyTotals: Record<string, MonthlyTotal> = {};
-    const monthNames = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
 
     transactions.forEach((t) => {
       const date = new Date(t.transaction.date);
-      const monthYear = `${monthNames[date.getMonth()]}\n${date.getFullYear()}`;
+      const monthYear = `${MONTH_NAMES[date.getMonth()]}\n${date.getFullYear()}`;
       monthlyTotals[monthYear] ??= { income: 0, expense: 0 };
       const amount = Number(t.transaction.amount);
       if (t.transaction.type === "OUTGOING") {
@@ -150,7 +200,6 @@ export default function HomeScreen() {
     return sortedData;
   }, [transactions, colors]);
 
-  // Process budget data for bar chart
   const barData = useMemo(() => {
     if (!budgets?.length) {
       return [
@@ -166,7 +215,6 @@ export default function HomeScreen() {
     }));
   }, [budgets, colors]);
 
-  // Calculate summary values
   const totalBudget = useMemo(
     () => (budgets ?? []).reduce((sum, b) => sum + Number(b.budget.amount), 0),
     [budgets],
@@ -211,130 +259,67 @@ export default function HomeScreen() {
         Budget Overview
       </ThemedText>
 
-      {/* Top Summary Cards */}
       <View style={styles.topSummaryContainer}>
-        <View
-          style={[
-            styles.summaryCard,
-            { backgroundColor: colors.cardHighlight },
-          ]}
-        >
-          <ThemedText style={styles.summaryLabel}>Income</ThemedText>
-          <ThemedText type="title" style={{ color: colors.incomeText }}>
-            ${totalIncome.toFixed(2)}
-          </ThemedText>
-        </View>
-        <View
-          style={[
-            styles.summaryCard,
-            { backgroundColor: colors.cardHighlight },
-          ]}
-        >
-          <ThemedText style={styles.summaryLabel}>Expenses</ThemedText>
-          <ThemedText type="title" style={{ color: colors.expenseText }}>
-            ${totalExpense.toFixed(2)}
-          </ThemedText>
-        </View>
-        <View
-          style={[
-            styles.summaryCard,
-            { backgroundColor: colors.cardHighlight },
-          ]}
-        >
-          <ThemedText style={styles.summaryLabel}>Budget</ThemedText>
-          <ThemedText type="title" style={{ color: colors.tint }}>
-            ${totalBudget.toFixed(2)}
-          </ThemedText>
-        </View>
+        <SummaryCard
+          label="Income"
+          value={totalIncome}
+          color={colors.incomeText}
+          backgroundColor={colors.cardHighlight}
+        />
+        <SummaryCard
+          label="Expenses"
+          value={totalExpense}
+          color={colors.expenseText}
+          backgroundColor={colors.cardHighlight}
+        />
+        <SummaryCard
+          label="Budget"
+          value={totalBudget}
+          color={colors.tint}
+          backgroundColor={colors.cardHighlight}
+        />
       </View>
 
-      {/* Cash Flow Chart */}
-      <View
-        style={[
-          styles.chartContainer,
-          { backgroundColor: colors.cardBackground },
-        ]}
+      <ChartContainer
+        title="Cash Flow"
+        colors={colors}
+        noData={!transactions?.length}
       >
-        <ThemedText type="subtitle" style={styles.chartTitle}>
-          Cash Flow
-        </ThemedText>
-        {!transactions?.length && (
-          <ThemedText style={styles.noDataText}>
-            No transaction data available
-          </ThemedText>
-        )}
         <LineChart
+          {...commonChartProps(colors)}
           data={lineData}
-          height={200}
-          width={350}
-          spacing={90}
-          initialSpacing={40}
-          endSpacing={40}
           color={colors.chartLine}
-          textColor={colors.text}
           showVerticalLines
           verticalLinesColor={colors.chartGrid}
-          xAxisColor={colors.chartGrid}
-          yAxisColor={colors.chartGrid}
-          yAxisTextStyle={{ color: colors.text }}
-          xAxisLabelTextStyle={{
-            color: colors.text,
-            width: 90,
-            textAlign: "center",
-            fontSize: 12,
-            marginTop: 8,
-          }}
           rulesColor={colors.chartGrid}
           rulesType="solid"
-          yAxisThickness={1}
-          xAxisThickness={1}
           maxValue={Math.max(...lineData.map((d) => Math.abs(d.value))) || 10}
-          noOfSections={5}
         />
-      </View>
+      </ChartContainer>
 
-      {/* Budget Allocation Chart */}
-      <View
-        style={[
-          styles.chartContainer,
-          { backgroundColor: colors.cardBackground },
-        ]}
+      <ChartContainer
+        title="Budget Allocation"
+        colors={colors}
+        noData={!budgets?.length}
       >
-        <ThemedText type="subtitle" style={styles.chartTitle}>
-          Budget Allocation
-        </ThemedText>
-        {!budgets?.length && (
-          <ThemedText style={styles.noDataText}>
-            No budget data available
-          </ThemedText>
-        )}
         <BarChart
+          {...commonChartProps(colors)}
           data={barData}
-          height={200}
-          width={350}
-          spacing={90}
-          initialSpacing={40}
-          endSpacing={40}
           barWidth={50}
-          xAxisColor={colors.chartGrid}
-          yAxisColor={colors.chartGrid}
-          yAxisTextStyle={{ color: colors.text }}
-          xAxisLabelTextStyle={{
-            color: colors.text,
-            width: 90,
-            textAlign: "center",
-            fontSize: 12,
-            marginTop: 8,
-          }}
-          yAxisThickness={1}
-          xAxisThickness={1}
           maxValue={Math.max(...barData.map((d) => d.value)) || 10}
-          noOfSections={5}
         />
-      </View>
+      </ChartContainer>
     </ScrollView>
   );
 }
+
+const cardShadow = {
+  shadowColor: Colors.light.cardShadow,
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 1,
+  shadowRadius: 4,
+  elevation: 3,
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -360,11 +345,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     padding: 16,
     borderRadius: 16,
-    shadowColor: Colors.light.cardShadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 4,
-    elevation: 3,
+    ...cardShadow,
   },
   chartTitle: {
     marginBottom: 16,
@@ -381,11 +362,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     gap: 4,
-    shadowColor: Colors.light.cardShadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 4,
-    elevation: 3,
+    ...cardShadow,
   },
   summaryLabel: {
     fontSize: 14,

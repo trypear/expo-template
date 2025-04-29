@@ -4,7 +4,9 @@ import { router, useLocalSearchParams } from "expo-router";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Button } from "@/components/ui/button";
+import { Colors } from "@/constants/Colors";
 import { trpc } from "@/hooks/api";
+import { useColorScheme } from "@/hooks/useColorScheme";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -17,6 +19,7 @@ interface DateTimeEvent {
 
 export default function NewBudgetScreen() {
   const { id: projectId } = useLocalSearchParams();
+  const colorScheme = useColorScheme();
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
@@ -61,29 +64,45 @@ export default function NewBudgetScreen() {
   };
 
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView
+      style={styles.container}
+      lightColor={Colors.light.background}
+      darkColor={Colors.dark.background}
+    >
       <ThemedText type="title">New Budget</ThemedText>
 
       <View style={styles.form}>
         <View style={styles.field}>
           <ThemedText style={styles.label}>Name</ThemedText>
           <TextInput
-            style={styles.input}
+            style={[
+              styles.input,
+              {
+                backgroundColor: Colors[colorScheme ?? "light"].cardBackground,
+                color: Colors[colorScheme ?? "light"].text,
+              },
+            ]}
             value={name}
             onChangeText={setName}
             placeholder="Budget name"
-            placeholderTextColor="#666"
+            placeholderTextColor={Colors[colorScheme ?? "light"].secondaryText}
           />
         </View>
 
         <View style={styles.field}>
           <ThemedText style={styles.label}>Amount</ThemedText>
           <TextInput
-            style={styles.input}
+            style={[
+              styles.input,
+              {
+                backgroundColor: Colors[colorScheme ?? "light"].cardBackground,
+                color: Colors[colorScheme ?? "light"].text,
+              },
+            ]}
             value={amount}
             onChangeText={setAmount}
             placeholder="0.00"
-            placeholderTextColor="#666"
+            placeholderTextColor={Colors[colorScheme ?? "light"].secondaryText}
             keyboardType="decimal-pad"
           />
         </View>
@@ -91,11 +110,18 @@ export default function NewBudgetScreen() {
         <View style={styles.field}>
           <ThemedText style={styles.label}>Description (optional)</ThemedText>
           <TextInput
-            style={[styles.input, styles.textArea]}
+            style={[
+              styles.input,
+              styles.textArea,
+              {
+                backgroundColor: Colors[colorScheme ?? "light"].cardBackground,
+                color: Colors[colorScheme ?? "light"].text,
+              },
+            ]}
             value={description}
             onChangeText={setDescription}
             placeholder="Budget description"
-            placeholderTextColor="#666"
+            placeholderTextColor={Colors[colorScheme ?? "light"].secondaryText}
             multiline
             numberOfLines={4}
           />
@@ -168,11 +194,9 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   input: {
-    backgroundColor: "#f5f5f5",
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    color: "#000",
   },
   textArea: {
     height: 100,

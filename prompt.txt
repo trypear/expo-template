@@ -1,0 +1,36 @@
+EXAMPLE QUERY:
+import { useQuery } from "@tanstack/react-query";
+
+  const { data: projects, isLoading } = useQuery(
+    trpc.budget.getProjectSummary.queryOptions({
+      projectId,
+    }),
+  );
+
+EXAMPLE MUTATION:
+import { useMutation } from "@tanstack/react-query";
+
+const updateMutation = useMutation(
+    trpc.budget.updateProject.mutationOptions({
+      onSuccess: () => {
+        void queryClient.invalidateQueries(
+          trpc.budget.getProjects.queryOptions(),
+        );
+        void queryClient.invalidateQueries(
+          trpc.budget.getProjectSummary.queryOptions({
+            projectId,
+          }),
+        );
+        router.back();
+      },
+    }),
+  );
+
+	updateMutation.mutate({
+      id: projectId,
+      data: {
+        ...data,
+        startDate: startDate,
+        endDate: endDate,
+      },
+    });

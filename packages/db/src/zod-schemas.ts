@@ -1,8 +1,6 @@
 // import { createInsertSchema } from "drizzle-zod";
 // import { z } from "zod";
 
-// import { project, transaction } from "./schema";
-
 // const commonOmitFields = {
 // 	id: true,
 // 	createdAt: true,

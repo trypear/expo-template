@@ -17,39 +17,54 @@ export default function TabLayout() {
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarBackground: TabBarBackground,
+        tabBarItemStyle: {
+          padding: 5,
+          margin: 0,
+          height: "100%",
+        },
         tabBarStyle: Platform.select({
           ios: {
             position: "absolute",
+            bottom: 0,
+            marginBottom: 0,
+            paddingBottom: 0,
+            height: 65,
+            overflow: "hidden",
           },
-          default: {},
+          default: {
+            marginBottom: 0,
+            paddingBottom: 0,
+            height: 45,
+            overflow: "hidden",
+          },
         }),
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: "Overview",
           tabBarIcon: ({ color }) => (
             <Icon size={28} name="house" color={color} />
           ),
+          title: "",
         }}
       />
       <Tabs.Screen
         name="projects"
         options={{
-          title: "Projects",
           tabBarIcon: ({ color }) => (
             <Icon size={28} name="folder" color={color} />
           ),
+          title: "",
         }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          title: "Settings",
           tabBarIcon: ({ color }) => (
             <Icon size={28} name="settings" color={color} />
           ),
+          title: "",
         }}
       />
     </Tabs>

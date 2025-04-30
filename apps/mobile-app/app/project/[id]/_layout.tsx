@@ -5,7 +5,7 @@ export default function ProjectLayout() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
       <Stack.Screen
-        name="budget/new"
+        name="project/edit"
         options={{
           presentation: "modal",
         }}

@@ -135,8 +135,14 @@ export default function ProjectScreen() {
       <ThemedView style={styles.container}>
         <View style={styles.sectionHeader}>
           <ThemedText type="title">{project.name}</ThemedText>
+          <Button
+            variant="outline"
+            onPress={() => router.push(`/project/${projectId}/edit`)}
+          >
+            Edit
+          </Button>
           <Button variant="outline" onPress={handleDelete}>
-            Delete Project
+            Delete
           </Button>
         </View>
         {project.description && (

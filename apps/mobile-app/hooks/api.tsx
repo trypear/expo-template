@@ -28,7 +28,6 @@ export const trpc = createTRPCOptionsProxy<AppRouter>({
         transformer: superjson,
         url: `${getBaseUrl()}/api/trpc`,
         fetch(url, options) {
-          // Create a new AbortController
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), 30000);
 

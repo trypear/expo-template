@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { StyleSheet, TextInput, View } from "react-native";
 import { router } from "expo-router";
 import { ThemedText } from "@/components/ThemedText";
@@ -10,6 +10,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 export default function NewProjectScreen() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [budget, setBudget] = useState("");
   const queryClient = useQueryClient();
 
   const { mutate, isPending } = useMutation(
@@ -22,6 +23,17 @@ export default function NewProjectScreen() {
       },
     }),
   );
+
+  const handleSubmit = useCallback(() => {
+    if (!name.trim() || !budget) return;
+    const budgetNumber = parseFloat(budget);
+    if (isNaN(budgetNumber)) return;
+    mutate({
+      name: name.trim(),
+      description: description.trim() || undefined,
+      budget: budgetNumber,
+    });
+  }, [name, description, budget, mutate]);
 
   return (
     <ThemedView style={styles.container}>
@@ -52,19 +64,27 @@ export default function NewProjectScreen() {
           />
         </View>
 
+        <View style={styles.field}>
+          <ThemedText style={styles.label}>Budget</ThemedText>
+          <TextInput
+            style={styles.input}
+            value={budget}
+            onChangeText={setBudget}
+            placeholder="Enter budget"
+            placeholderTextColor="#666"
+            keyboardType="numeric"
+          />
+        </View>
+
         <View style={styles.buttons}>
           <Button onPress={() => router.back()} variant="ghost">
             Cancel
           </Button>
           <Button
-            onPress={() => {
-              if (!name.trim()) return;
-              mutate({
-                name: name.trim(),
-                description: description.trim() || undefined,
-              });
-            }}
-            disabled={!name.trim() || isPending}
+            onPress={handleSubmit}
+            disabled={
+              !name.trim() || !budget || isNaN(parseFloat(budget)) || isPending
+            }
           >
             {isPending ? "Creating..." : "Create Project"}
           </Button>

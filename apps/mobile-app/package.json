@@ -15,6 +15,7 @@
     "preset": "jest-expo"
   },
   "dependencies": {
+    "@acme/utils": "workspace:^",
     "@expo/metro-config": "^0.19.12",
     "@expo/vector-icons": "^14.0.2",
     "@react-native-community/datetimepicker": "^8.3.0",

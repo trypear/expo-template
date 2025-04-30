@@ -30,6 +30,7 @@
     "with-env": "dotenv -e ../../.env --"
   },
   "dependencies": {
+    "@acme/utils": "workspace:^",
     "@neondatabase/serverless": "^0.10.4",
     "drizzle-orm": "^0.41.0",
     "drizzle-zod": "^0.7.0",

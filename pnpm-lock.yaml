@@ -242,6 +242,9 @@ importers:
 
   apps/mobile-app:
     dependencies:
+      '@acme/utils':
+        specifier: workspace:^
+        version: link:../../packages/utils
       '@expo/metro-config':
         specifier: ^0.19.12
         version: 0.19.12
@@ -591,6 +594,9 @@ importers:
 
   packages/db:
     dependencies:
+      '@acme/utils':
+        specifier: workspace:^
+        version: link:../utils
       '@neondatabase/serverless':
         specifier: ^0.10.4
         version: 0.10.4
@@ -692,6 +698,27 @@ importers:
       zod:
         specifier: 'catalog:'
         version: 3.24.3
+
+  packages/utils:
+    devDependencies:
+      '@acme/eslint-config':
+        specifier: workspace:*
+        version: link:../../tooling/eslint
+      '@acme/prettier-config':
+        specifier: workspace:*
+        version: link:../../tooling/prettier
+      '@acme/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/typescript
+      eslint:
+        specifier: 'catalog:'
+        version: 9.25.1(jiti@2.4.2)
+      prettier:
+        specifier: 'catalog:'
+        version: 3.5.3
+      typescript:
+        specifier: 'catalog:'
+        version: 5.8.3
 
   packages/validators:
     dependencies:

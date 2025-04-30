@@ -1,3 +1,4 @@
+import { assert } from "@acme/utils";
 import type { SQL, SQLWrapper } from "drizzle-orm";
 import { eq } from "drizzle-orm";
 import type { PgColumn } from "drizzle-orm/pg-core";
@@ -46,26 +47,6 @@ export const eqi = <T extends ValidColumnType, U extends ValidColumnType | strin
 	return eq(left as SQLWrapper, right);
 };
 
-class AssertionError extends Error {
-	constructor(message: string) {
-		super(message);
-		// Adding the stack info to error.
-		// Inspired by: https://blog.dennisokeeffe.com/blog/2020-08-07-error-tracing-with-sentry-and-es6-classes
-		// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-		if (Error.captureStackTrace) {
-			Error.captureStackTrace(this, AssertionError);
-		} else {
-			this.stack = new Error(message).stack;
-		}
-		this.name = "AssertionError";
-	}
-}
-
-export function assert(condition: boolean, message: string): asserts condition {
-	if (!condition) {
-		throw new AssertionError(message);
-	}
-};
 
 /**
  * Always returns a value, otherwise throws an error

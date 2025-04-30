@@ -1,24 +1,19 @@
-import { z } from "zod";
 import type { TRPCRouterRecord } from "@trpc/server";
-import { and, desc, eqi, gte, lte } from "@acme/db";
+import { z } from "zod";
 
-import { budget, project, transaction, transactionType } from "@acme/db/schema";
+import {
+	and,
+	createProjectSchema,
+	desc,
+	eqi,
+	gte,
+	lte,
+	sum,
+} from "@acme/db";
+import { project, transaction, transactionType, user } from "@acme/db/schema";
+
 import { protectedProcedure } from "../trpc";
-
-// Input validation schemas
-const projectSchema = z.object({
-	name: z.string().min(1).max(255),
-	description: z.string().optional(),
-});
-
-const budgetSchema = z.object({
-	projectId: z.string(),
-	amount: z.number().positive(),
-	startDate: z.date(),
-	endDate: z.date().optional(),
-	name: z.string().min(1).max(255),
-	description: z.string().optional(),
-});
+import { getFirstEl } from "@acme/utils";
 
 const transactionSchema = z.object({
 	projectId: z.string(),
@@ -29,9 +24,30 @@ const transactionSchema = z.object({
 });
 
 export const budgetRouter = {
-	// Project endpoints
+	getProjectSummary: protectedProcedure
+		.input(z.object({ projectId: z.string() }).optional())
+		.query(async ({ ctx, input }) => {
+			return ctx.db
+				.select({
+					projectId: project.id,
+					projectName: project.name,
+					projectBudget: project.budget,
+					totalSpend: sum(transaction.amount),
+				})
+				.from(user)
+				.where(
+					and(
+						eqi(user.id, ctx.session.user.id),
+						input?.projectId ? eqi(project.id, input.projectId) : undefined,
+					),
+				)
+				.innerJoin(project, eqi(project.userId, user.id))
+				.leftJoin(transaction, eqi(project.id, transaction.projectId))
+				.groupBy(project.id, project.name);
+		}),
+
 	createProject: protectedProcedure
-		.input(projectSchema)
+		.input(createProjectSchema)
 		.mutation(async ({ ctx, input }) => {
 			return ctx.db.insert(project).values({
 				...input,
@@ -59,11 +75,12 @@ export const budgetRouter = {
 						eqi(project.userId, ctx.session.user.id),
 					),
 				)
-				.limit(1);
+				.limit(1)
+				.then(getFirstEl);
 		}),
 
 	updateProject: protectedProcedure
-		.input(z.object({ id: z.string(), data: projectSchema }))
+		.input(z.object({ id: z.string(), data: createProjectSchema }))
 		.mutation(async ({ ctx, input }) => {
 			return ctx.db
 				.update(project)
@@ -89,99 +106,20 @@ export const budgetRouter = {
 				);
 		}),
 
-	// Budget endpoints
-	createBudget: protectedProcedure
-		.input(budgetSchema)
-		.mutation(async ({ ctx, input }) => {
-			// Verify project ownership before creating budget
-			const projectRecord = await ctx.db
-				.select()
-				.from(project)
-				.where(
-					and(
-						eqi(project.id, input.projectId),
-						eqi(project.userId, ctx.session.user.id),
-					),
-				)
-				.limit(1);
-
-			if (!projectRecord.length) {
-				throw new Error("Project not found or access denied");
-			}
-
-			return ctx.db.insert(budget).values({
-				...input,
-				amount: input.amount.toString(), // Convert number to string for numeric column
-			});
-		}),
-
-	getProjectBudgets: protectedProcedure
+	getProjectBudget: protectedProcedure
 		.input(z.object({ projectId: z.string() }))
 		.query(async ({ ctx, input }) => {
 			return ctx.db
 				.select()
-				.from(budget)
-				.innerJoin(project, eqi(budget.projectId, project.id))
+				.from(project)
 				.where(
 					and(
 						eqi(project.id, input.projectId),
 						eqi(project.userId, ctx.session.user.id),
 					),
 				)
-				.orderBy(desc(budget.startDate));
+				.then(getFirstEl);
 		}),
-
-	updateBudget: protectedProcedure
-		.input(z.object({ id: z.string(), data: budgetSchema }))
-		.mutation(async ({ ctx, input }) => {
-			// Verify project ownership before updating budget
-			const projectRecord = await ctx.db
-				.select()
-				.from(project)
-				.where(
-					and(
-						eqi(project.id, input.data.projectId),
-						eqi(project.userId, ctx.session.user.id),
-					),
-				)
-				.limit(1);
-
-			if (!projectRecord.length) {
-				throw new Error("Project not found or access denied");
-			}
-
-			return ctx.db
-				.update(budget)
-				.set({
-					...input.data,
-					amount: input.data.amount.toString(), // Convert number to string for numeric column
-				})
-				.where(eqi(budget.id, input.id));
-		}),
-
-	deleteBudget: protectedProcedure
-		.input(z.object({ id: z.string() }))
-		.mutation(async ({ ctx, input }) => {
-			// Verify project ownership before deleting budget
-			const budgetRecord = await ctx.db
-				.select()
-				.from(budget)
-				.innerJoin(project, eqi(budget.projectId, project.id))
-				.where(
-					and(
-						eqi(budget.id, input.id),
-						eqi(project.userId, ctx.session.user.id),
-					),
-				)
-				.limit(1);
-
-			if (!budgetRecord.length) {
-				throw new Error("Budget not found or access denied");
-			}
-
-			return ctx.db.delete(budget).where(eqi(budget.id, input.id));
-		}),
-
 	// Transaction endpoints
 	createTransaction: protectedProcedure
 		.input(transactionSchema)
@@ -221,22 +159,14 @@ export const budgetRouter = {
 			const conditions = [
 				eqi(project.id, input.projectId),
 				eqi(project.userId, ctx.session.user.id),
+				...(input.startDate ? [gte(transaction.date, input.startDate)] : []),
+				...(input.endDate ? [lte(transaction.date, input.endDate)] : []),
 			];
 
-			if (input.startDate) {
-				conditions.push(gte(transaction.date, input.startDate));
-			}
-
-			if (input.endDate) {
-				conditions.push(lte(transaction.date, input.endDate));
-			}
-
-			if (input.type) {
-				conditions.push(eqi(transaction.type, input.type));
-			}
-
 			return ctx.db
-				.select()
+				.select({
+					transaction,
+				})
 				.from(transaction)
 				.innerJoin(project, eqi(transaction.projectId, project.id))
 				.where(and(...conditions))

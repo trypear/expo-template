@@ -6,7 +6,8 @@ import type {
 } from "@auth/core/adapters"
 import type { Awaitable } from "@auth/core/types"
 import type { Database } from "@acme/db/client"
-import { eqi, getFirstEl, parseFirstEl, account, session, user, and } from "@acme/db"
+import { eqi, account, session, user, and } from "@acme/db"
+import { getFirstEl, parseFirstEl } from "@acme/utils"
 
 export function CustomDrizzleAdapter(
 	client: Database,

@@ -1,6 +1,7 @@
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-import { project, budget, transaction } from "./schema";
+
+import { project, transaction } from "./schema";
 
 const commonOmitFields = {
 	id: true,
@@ -11,25 +12,17 @@ const commonOmitFields = {
 export const createProjectSchema = createInsertSchema(project, {
 	name: z.string().min(1).max(255),
 	description: z.string().optional(),
-}).omit({
-	...commonOmitFields,
-	userId: true,
-});
-
-export const createBudgetSchema = createInsertSchema(budget, {
-	amount: z.number().positive(),
-	startDate: z.date(),
-	endDate: z.date().optional(),
-	name: z.string().min(1).max(255),
-	description: z.string().optional(),
-}).omit({
-	...commonOmitFields,
-	projectId: true,
-});
+	budget: z.number().positive(),
+})
+	.omit({
+		...commonOmitFields,
+		userId: true,
+	})
+	// transforming as the database needs numeric to be a string
+	.transform((x) => ({ ...x, budget: x.budget.toString() }));
 
 export const createTransactionSchema = createInsertSchema(transaction, {
-	type: z.enum(["INCOMING", "OUTGOING"]),
-	amount: z.number().positive(),
+	amount: z.number(),
 	description: z.string().optional(),
 	date: z.date(),
 }).omit({

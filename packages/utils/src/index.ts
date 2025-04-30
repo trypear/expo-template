@@ -20,3 +20,20 @@ export function assert(condition: boolean, message: string): asserts condition {
 		throw new AssertionError(message);
 	}
 };
+
+/**
+ * Always returns a value, otherwise throws an error
+ */
+export const parseFirstEl = <T extends object>(x: T[]) => {
+	const y = x[0];
+	assert(!!y, "No first element found :(");
+
+	return y;
+}
+
+/**
+ * Returns first element or null
+ */
+export const getFirstEl = <T extends object>(x: T[] | null | undefined) => {
+	return x?.[0] ?? null;
+};

@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { Alert, Image, StyleSheet, View } from "react-native";
 import { LineChart } from "react-native-gifted-charts";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -15,15 +16,24 @@ import { trpc } from "@/hooks/api";
 import { platform } from "@/hooks/getPlatform";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { assert } from "@acme/utils";
+
 export default function ProjectScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const queryClient = useQueryClient();
   const projectId = typeof id === "string" ? id : id?.[0];
+  assert(!!projectId, "Error missing project ID in project screen");
 
   const { data: project, isLoading: isLoadingProject } = useQuery(
     trpc.budget.getProject.queryOptions({
-      id: projectId ?? "_",
+      id: projectId,
+    }),
+  );
+
+  const { data: transactions, isLoading: isLoadingTransactions } = useQuery(
+    trpc.budget.getProjectTransactions.queryOptions({
+      projectId,
     }),
   );
 
@@ -37,6 +47,12 @@ export default function ProjectScreen() {
       },
     }),
   );
+
+  const netTransactions = useMemo(() => {
+    return transactions?.reduce((acc, curr) => {
+      return acc + Number(curr.transaction.amount);
+    }, 0);
+  }, [transactions]);
 
   const handleDelete = () => {
     if (!projectId) return;
@@ -65,45 +81,22 @@ export default function ProjectScreen() {
     }
   };
 
-  const { data: budgets, isLoading: isLoadingBudgets } = useQuery(
-    trpc.budget.getProjectBudgets.queryOptions({
-      projectId: projectId ?? "_",
-    }),
-  );
-
-  const { data: transactions, isLoading: isLoadingTransactions } = useQuery(
-    trpc.budget.getProjectTransactions.queryOptions({
-      projectId: projectId ?? "_",
-    }),
-  );
-
   if (!projectId) {
     router.back();
     return null;
   }
 
-  const projectData = project?.[0];
-
-  if (isLoadingProject || isLoadingBudgets || isLoadingTransactions) {
+  if (isLoadingProject || isLoadingTransactions) {
     return <LoadingScreen message="Loading project details..." />;
   }
 
-  if (!projectData) {
+  if (!project) {
     return (
       <ThemedView style={styles.container}>
         <ThemedText>Project not found</ThemedText>
       </ThemedView>
     );
   }
-
-  const totalBudget =
-    budgets?.reduce((sum, item) => sum + Number(item.budget.amount), 0) ?? 0;
-
-  const netTransactions =
-    transactions?.reduce((sum, item) => {
-      const amount = Number(item.transaction.amount);
-      return sum + (item.transaction.type === "INCOMING" ? amount : -amount);
-    }, 0) ?? 0;
 
   return (
     <ParallaxScrollView
@@ -116,10 +109,7 @@ export default function ProjectScreen() {
               curved
               data={transactions
                 .map((t) => ({
-                  value:
-                    t.transaction.type === "INCOMING"
-                      ? Number(t.transaction.amount)
-                      : -Number(t.transaction.amount),
+                  value: Number(t.transaction.amount),
                   date: new Date(t.transaction.date),
                 }))
                 .sort((a, b) => a.date.getTime() - b.date.getTime())
@@ -144,14 +134,14 @@ export default function ProjectScreen() {
     >
       <ThemedView style={styles.container}>
         <View style={styles.sectionHeader}>
-          <ThemedText type="title">{projectData.name}</ThemedText>
+          <ThemedText type="title">{project.name}</ThemedText>
           <Button variant="outline" onPress={handleDelete}>
             Delete Project
           </Button>
         </View>
-        {projectData.description && (
+        {project.description && (
           <ThemedText style={styles.description}>
-            {projectData.description}
+            {project.description}
           </ThemedText>
         )}
 
@@ -168,9 +158,7 @@ export default function ProjectScreen() {
             >
               Total Budget
             </ThemedText>
-            <ThemedText type="defaultSemiBold">
-              ${totalBudget.toFixed(2)}
-            </ThemedText>
+            <ThemedText type="defaultSemiBold">${project.budget}</ThemedText>
           </View>
           <View style={styles.summaryItem}>
             <ThemedText
@@ -180,82 +168,30 @@ export default function ProjectScreen() {
             >
               Net Transactions
             </ThemedText>
-            <ThemedText
-              type="defaultSemiBold"
-              style={netTransactions >= 0 ? styles.positive : styles.negative}
-              lightColor={
-                netTransactions >= 0
-                  ? Colors.light.positive
-                  : Colors.light.negative
-              }
-              darkColor={
-                netTransactions >= 0
-                  ? Colors.dark.positive
-                  : Colors.dark.negative
-              }
-            >
-              ${Math.abs(netTransactions).toFixed(2)}
-              {netTransactions >= 0 ? " +" : " -"}
-            </ThemedText>
-          </View>
-        </ThemedView>
-
-        <ThemedView style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <ThemedText type="subtitle">Budgets</ThemedText>
-            <Button
-              onPress={() => router.push(`/project/${projectId}/budget/new`)}
-              variant="default"
-            >
-              New Budget
-            </Button>
-          </View>
-          {!budgets?.length ? (
-            <ThemedView
-              style={styles.emptyState}
-              lightColor={Colors.light.cardBackground}
-              darkColor={Colors.dark.cardBackground}
-            >
-              <ThemedText>No budgets yet</ThemedText>
+            {netTransactions ? (
               <ThemedText
-                style={styles.emptyStateHint}
-                lightColor={Colors.light.secondaryText}
-                darkColor={Colors.dark.secondaryText}
+                type="defaultSemiBold"
+                style={netTransactions >= 0 ? styles.positive : styles.negative}
+                lightColor={
+                  netTransactions >= 0
+                    ? Colors.light.positive
+                    : Colors.light.negative
+                }
+                darkColor={
+                  netTransactions >= 0
+                    ? Colors.dark.positive
+                    : Colors.dark.negative
+                }
               >
-                Create a budget to start tracking your expenses
+                ${Math.abs(netTransactions).toFixed(2)}
+                {netTransactions >= 0 ? " +" : " -"}
               </ThemedText>
-            </ThemedView>
-          ) : (
-            budgets.map((item) => (
-              <ThemedView
-                key={item.budget.id}
-                style={styles.card}
-                lightColor={Colors.light.cardBackground}
-                darkColor={Colors.dark.cardBackground}
-              >
-                <ThemedText type="defaultSemiBold">
-                  {item.budget.name}
-                </ThemedText>
-                <ThemedText type="defaultSemiBold">
-                  Amount: ${Number(item.budget.amount).toFixed(2)}
-                </ThemedText>
-                <ThemedText
-                  lightColor={Colors.light.secondaryText}
-                  darkColor={Colors.dark.secondaryText}
-                >
-                  Start: {new Date(item.budget.startDate).toLocaleDateString()}
-                </ThemedText>
-                {item.budget.endDate && (
-                  <ThemedText
-                    lightColor={Colors.light.secondaryText}
-                    darkColor={Colors.dark.secondaryText}
-                  >
-                    End: {new Date(item.budget.endDate).toLocaleDateString()}
-                  </ThemedText>
-                )}
-              </ThemedView>
-            ))
-          )}
+            ) : (
+              <ThemedText style={styles.positive}>
+                No transactions made
+              </ThemedText>
+            )}
+          </View>
         </ThemedView>
 
         <ThemedView style={styles.section}>
@@ -295,17 +231,17 @@ export default function ProjectScreen() {
               >
                 <View style={styles.transactionHeader}>
                   <ThemedText type="defaultSemiBold">
-                    ${Number(item.transaction.amount).toFixed(2)}
+                    ${Math.abs(Number(item.transaction.amount)).toFixed(2)}
                   </ThemedText>
                   <ThemedView
                     style={styles.transactionType}
                     lightColor={
-                      item.transaction.type === "INCOMING"
+                      Number(item.transaction.amount) >= 0
                         ? Colors.light.positive
                         : Colors.light.negative
                     }
                     darkColor={
-                      item.transaction.type === "INCOMING"
+                      Number(item.transaction.amount) >= 0
                         ? Colors.dark.positive
                         : Colors.dark.negative
                     }
@@ -315,7 +251,9 @@ export default function ProjectScreen() {
                       lightColor="#FFFFFF"
                       darkColor="#FFFFFF"
                     >
-                      {item.transaction.type}
+                      {Number(item.transaction.amount) >= 0
+                        ? "Incoming"
+                        : "Outgoing"}
                     </ThemedText>
                   </ThemedView>
                 </View>

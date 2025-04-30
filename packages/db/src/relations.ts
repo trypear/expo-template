@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { account, budget, project, session, transaction, user } from "./schema";
+import { account, project, session, transaction, user } from "./schema";
 
 export const userRelations = relations(user, ({ many }) => ({
 	accounts: many(account),
@@ -8,12 +8,7 @@ export const userRelations = relations(user, ({ many }) => ({
 
 export const projectRelations = relations(project, ({ one, many }) => ({
 	user: one(user, { fields: [project.userId], references: [user.id] }),
-	budgets: many(budget),
 	transactions: many(transaction),
-}));
-
-export const BudgetRelations = relations(budget, ({ one }) => ({
-	project: one(project, { fields: [budget.projectId], references: [project.id] }),
 }));
 
 export const transactionRelations = relations(transaction, ({ one }) => ({

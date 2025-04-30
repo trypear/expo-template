@@ -25,6 +25,9 @@ export const project = createTable(
     userId: fk("userId", () => user, { onDelete: "cascade" }),
     name: varchar({ length: 255 }).notNull(),
     description: text(),
+    budget: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+    startDate: timestamp().notNull().defaultNow(),
+    endDate: timestamp(),
     createdAt: timestamp().defaultNow().notNull(),
     updatedAt: timestamp({ mode: "date", withTimezone: true }).$onUpdateFn(() => sql`now()`),
   },
@@ -36,33 +39,12 @@ export const project = createTable(
 export type Project = typeof project.$inferSelect;
 export type NewProject = typeof project.$inferInsert;
 
-export const budget = createTable(
-  "budget",
-  {
-    projectId: fk("projectId", () => project, { onDelete: "cascade" }),
-    amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
-    startDate: timestamp().notNull(),
-    endDate: timestamp(),
-    name: varchar({ length: 255 }).notNull(),
-    description: text(),
-    createdAt: timestamp().defaultNow().notNull(),
-    updatedAt: timestamp({ mode: "date", withTimezone: true }).$onUpdateFn(() => sql`now()`),
-  },
-  (t) => [
-    index("budget_project_id_start_date_idx").on(t.projectId, t.startDate)
-  ]
-);
-
-export type Budget = typeof budget.$inferSelect;
-export type NewBudget = typeof budget.$inferInsert;
-
 export const transactionType = z.enum(["INCOMING", "OUTGOING"]);
 
 export const transaction = createTable(
   "transaction",
   {
     projectId: fk("projectId", () => project, { onDelete: "cascade" }),
-    type: varchar({ length: 20 }).$type<typeof transactionType._type>().notNull(),
     amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
     description: text(),
     date: timestamp().notNull(),
@@ -71,7 +53,6 @@ export const transaction = createTable(
   },
   (t) => [
     index("transaction_project_id_date_idx").on(t.projectId, t.date),
-    index("transaction_project_id_type_idx").on(t.projectId, t.type)
   ]
 );
 

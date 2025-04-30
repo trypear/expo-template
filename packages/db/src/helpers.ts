@@ -1,4 +1,3 @@
-import { assert } from "@acme/utils";
 import type { SQL, SQLWrapper } from "drizzle-orm";
 import { eq } from "drizzle-orm";
 import type { PgColumn } from "drizzle-orm/pg-core";
@@ -45,22 +44,4 @@ export const eqi = <T extends ValidColumnType, U extends ValidColumnType | strin
 		: string,
 ): SQL<unknown> => {
 	return eq(left as SQLWrapper, right);
-};
-
-
-/**
- * Always returns a value, otherwise throws an error
- */
-export const parseFirstEl = <T extends object>(x: T[]) => {
-	const y = x[0];
-	assert(!!y, "No first element found :(");
-
-	return y;
-}
-
-/**
- * Returns first element or null
- */
-export const getFirstEl = <T extends object>(x: T[]) => {
-	return x[0] ?? null;
 };

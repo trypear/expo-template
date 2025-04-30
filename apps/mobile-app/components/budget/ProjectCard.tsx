@@ -1,12 +1,20 @@
 "use client";
 
-import { Pressable, StyleSheet, View } from "react-native";
+import { useMemo } from "react";
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  useColorScheme,
+  View,
+} from "react-native";
 import { router } from "expo-router";
 import { Colors } from "@/constants/Colors";
 import { trpc } from "@/hooks/api";
-import { useThemeColor } from "@/hooks/useThemeColor";
 import { formatCurrency } from "@/utils/formatCurrency";
 import { useQuery } from "@tanstack/react-query";
+
+import { getFirstEl } from "@acme/utils";
 
 import { ThemedText } from "../ThemedText";
 import { ThemedView } from "../ThemedView";
@@ -16,23 +24,31 @@ interface ProjectCardProps {
   name: string;
   description?: string;
 }
+
 export function ProjectCard({ id, name, description }: ProjectCardProps) {
-  const { data: budgets } = useQuery(
-    trpc.budget.getProjectBudgets.queryOptions({ projectId: id }),
+  const themeColor = useColorScheme();
+  const { data: projects } = useQuery(
+    trpc.budget.getProjectSummary.queryOptions({ projectId: id }),
   );
 
   const { data: transactions } = useQuery(
     trpc.budget.getProjectTransactions.queryOptions({ projectId: id }),
   );
 
-  const totalBudget =
-    budgets?.reduce((sum, item) => sum + Number(item.budget.amount), 0) ?? 0;
+  const project = useMemo(() => getFirstEl(projects), [projects]);
 
-  const netTransactions =
-    transactions?.reduce((sum, item) => {
-      const amount = Number(item.transaction.amount);
-      return sum + (item.transaction.type === "INCOMING" ? amount : -amount);
-    }, 0) ?? 0;
+  const netTransactions = useMemo(
+    () =>
+      transactions?.reduce((acc, curr) => {
+        return acc + Number(curr.transaction.amount);
+      }, 0) ?? 0,
+    [transactions],
+  );
+
+  if (!project) {
+    // TODO: setup loading screen;
+    return <Text>loading...</Text>;
+  }
 
   return (
     <Pressable onPress={() => router.push(`/project/${id}` as const)}>
@@ -78,13 +94,10 @@ export function ProjectCard({ id, name, description }: ProjectCardProps) {
           style={[
             styles.stats,
             {
-              borderTopColor: useThemeColor(
-                {
-                  light: Colors.light.cardBorder,
-                  dark: Colors.dark.cardBorder,
-                },
-                "cardBorder",
-              ),
+              borderTopColor:
+                themeColor === "dark"
+                  ? Colors.dark.cardBorder
+                  : Colors.light.cardBorder,
             },
           ]}
         >
@@ -94,28 +107,28 @@ export function ProjectCard({ id, name, description }: ProjectCardProps) {
               lightColor={Colors.light.secondaryText}
               darkColor={Colors.dark.secondaryText}
             >
-              Budget: {formatCurrency(totalBudget)}
+              Budget: {formatCurrency(Number(project.projectBudget))}
             </ThemedText>
             <ThemedText
               style={[
                 styles.budgetStatus,
-                Math.abs(netTransactions) > totalBudget
+                Math.abs(netTransactions) > Number(project.projectBudget)
                   ? styles.overBudget
                   : styles.withinBudget,
               ]}
               lightColor={
-                Math.abs(netTransactions) > totalBudget
+                Math.abs(netTransactions) > Number(project.projectBudget)
                   ? Colors.light.negative
                   : Colors.light.positive
               }
               darkColor={
-                Math.abs(netTransactions) > totalBudget
+                Math.abs(netTransactions) > Number(project.projectBudget)
                   ? Colors.dark.negative
                   : Colors.dark.positive
               }
             >
-              {totalBudget > 0
-                ? `${((Math.abs(netTransactions) / totalBudget) * 100).toFixed(1)}% used`
+              {Number(project.projectBudget) > 0
+                ? `${((Math.abs(netTransactions) / Number(project.projectBudget)) * 100).toFixed(1)}% used`
                 : "No budget set"}
             </ThemedText>
           </View>

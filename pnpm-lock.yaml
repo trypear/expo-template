@@ -508,6 +508,9 @@ importers:
       '@acme/db':
         specifier: workspace:*
         version: link:../db
+      '@acme/utils':
+        specifier: workspace:^
+        version: link:../utils
       '@acme/validators':
         specifier: workspace:*
         version: link:../validators
@@ -545,6 +548,9 @@ importers:
       '@acme/db':
         specifier: workspace:*
         version: link:../db
+      '@acme/utils':
+        specifier: workspace:^
+        version: link:../utils
       '@auth/core':
         specifier: 'catalog:'
         version: 0.37.2

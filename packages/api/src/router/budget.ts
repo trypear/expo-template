@@ -82,6 +82,7 @@ export const budgetRouter = {
 	updateProject: protectedProcedure
 		.input(z.object({ id: z.string(), data: createProjectSchema }))
 		.mutation(async ({ ctx, input }) => {
+			console.log("UPDATE PROJECT INPUT", input.data.startDate.toISOString());
 			return ctx.db
 				.update(project)
 				.set(input.data)

@@ -13,13 +13,22 @@ export const createProjectSchema = createInsertSchema(project, {
 	name: z.string().min(1).max(255),
 	description: z.string().optional(),
 	budget: z.number().positive(),
+	startDate: z.date(),
+	endDate: z.date(),
 })
 	.omit({
 		...commonOmitFields,
 		userId: true,
 	})
 	// transforming as the database needs numeric to be a string
-	.transform((x) => ({ ...x, budget: x.budget.toString() }));
+	// and ensuring date fields are properly handled
+	.transform((x) => ({
+		...x,
+		budget: x.budget.toString(),
+		// Ensure date fields are Date objects
+		// startDate: new Date(x.startDate),
+		// ...(x.endDate ? { endDate: new Date(x.endDate) } : {})
+	}));
 
 export const createTransactionSchema = createInsertSchema(transaction, {
 	amount: z.number(),

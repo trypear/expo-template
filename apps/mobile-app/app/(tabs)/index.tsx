@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
-import { BarChart, LineChart } from "react-native-gifted-charts";
+import { LineChart } from "react-native-gifted-charts";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
@@ -131,11 +131,11 @@ export default function HomeScreen() {
     }),
   );
 
-  const { data: budgets } = useQuery(
-    trpc.budget.getProjectBudgets.queryOptions({
-      projectId: projectId ?? "",
-    }),
-  );
+  const totalBudget = useMemo(() => {
+    return projects?.reduce((acc, curr) => {
+      return acc + Number(curr.budget);
+    }, 0);
+  }, [projects]);
 
   const lineData = useMemo(() => {
     if (!transactions?.length) {
@@ -163,7 +163,7 @@ export default function HomeScreen() {
       const monthYear = `${MONTH_NAMES[date.getMonth()]}\n${date.getFullYear()}`;
       monthlyTotals[monthYear] ??= { income: 0, expense: 0 };
       const amount = Number(t.transaction.amount);
-      if (t.transaction.type === "OUTGOING") {
+      if (Number(t.transaction.amount) <= 0) {
         monthlyTotals[monthYear].expense += amount;
       } else {
         monthlyTotals[monthYear].income += amount;
@@ -200,33 +200,13 @@ export default function HomeScreen() {
     return sortedData;
   }, [transactions, colors]);
 
-  const barData = useMemo(() => {
-    if (!budgets?.length) {
-      return [
-        { value: 0, label: "No Budget", frontColor: colors.chartBarSecondary },
-        { value: 0, label: "Set Budget", frontColor: colors.chartBarSecondary },
-      ];
-    }
-
-    return budgets.map((b, index) => ({
-      value: Number(b.budget.amount),
-      label: b.budget.name,
-      frontColor: index % 2 === 0 ? colors.chartBar : colors.chartBarSecondary,
-    }));
-  }, [budgets, colors]);
-
-  const totalBudget = useMemo(
-    () => (budgets ?? []).reduce((sum, b) => sum + Number(b.budget.amount), 0),
-    [budgets],
-  );
-
   const { totalIncome, totalExpense } = useMemo(() => {
     if (!transactions?.length) return { totalIncome: 0, totalExpense: 0 };
 
     return transactions.reduce(
       (acc, t) => {
         const amount = Number(t.transaction.amount);
-        if (t.transaction.type === "OUTGOING") {
+        if (Number(t.transaction.amount) <= 0) {
           acc.totalExpense += amount;
         } else {
           acc.totalIncome += amount;
@@ -237,7 +217,7 @@ export default function HomeScreen() {
     );
   }, [transactions]);
 
-  if (!projects?.length) {
+  if (!projects?.length || totalBudget === undefined) {
     return (
       <ThemedView style={styles.container}>
         <ThemedText type="title" style={styles.title}>
@@ -294,19 +274,6 @@ export default function HomeScreen() {
           rulesColor={colors.chartGrid}
           rulesType="solid"
           maxValue={Math.max(...lineData.map((d) => Math.abs(d.value))) || 10}
-        />
-      </ChartContainer>
-
-      <ChartContainer
-        title="Budget Allocation"
-        colors={colors}
-        noData={!budgets?.length}
-      >
-        <BarChart
-          {...commonChartProps(colors)}
-          data={barData}
-          barWidth={50}
-          maxValue={Math.max(...barData.map((d) => d.value)) || 10}
         />
       </ChartContainer>
     </ScrollView>

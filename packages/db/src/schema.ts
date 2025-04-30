@@ -1,5 +1,5 @@
 import { sql, } from "drizzle-orm";
-import { numeric, uniqueIndex, index, timestamp, varchar, text, integer } from "drizzle-orm/pg-core";
+import { numeric, uniqueIndex, index, varchar, text, integer, timestamp } from "drizzle-orm/pg-core";
 import { createTable, fk, lower } from "./utils";
 import { z } from "zod";
 
@@ -47,7 +47,7 @@ export const transaction = createTable(
     projectId: fk("projectId", () => project, { onDelete: "cascade" }),
     amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
     description: text(),
-    date: timestamp().notNull(),
+    date: timestamp().notNull().defaultNow(),
     createdAt: timestamp().defaultNow().notNull(),
     updatedAt: timestamp({ mode: "date", withTimezone: true }).$onUpdateFn(() => sql`now()`),
   },

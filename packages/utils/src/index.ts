@@ -15,6 +15,11 @@ class AssertionError extends Error {
 	}
 }
 
+/**
+ * Use this function to assert things as being true (and provide a nice error message)
+ * @param condition to assert true
+ * @param message the error message that appears when the condition is not true
+ */
 export function assert(condition: boolean, message: string): asserts condition {
 	if (!condition) {
 		throw new AssertionError(message);

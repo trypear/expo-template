@@ -49,15 +49,6 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="Projects"
-        options={{
-          tabBarIcon: ({ color }) => (
-            <Icon size={28} name="folder" color={color} />
-          ),
-          title: "",
-        }}
-      />
-      <Tabs.Screen
         name="Settings"
         options={{
           tabBarIcon: ({ color }) => (

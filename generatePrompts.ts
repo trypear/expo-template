@@ -11,9 +11,9 @@ EXAMPLE MOBILE APP TRPC QUERY:
 import { useQuery } from "@tanstack/react-query";
 
 const { data: projects, isLoading } = useQuery(
-trpc.budget.getProjectSummary.queryOptions({
-projectId,
-}),
+	trpc.budget.getProjectSummary.queryOptions({
+		projectId,
+	}),
 );
 </code>
 
@@ -22,30 +22,32 @@ EXAMPLE MUTATION:
 import { useMutation } from "@tanstack/react-query";
 
 const updateMutation = useMutation(
-trpc.budget.updateProject.mutationOptions({
-onSuccess: () => {
-void queryClient.invalidateQueries(
-trpc.budget.getProjects.queryOptions(),
-);
-void queryClient.invalidateQueries(
-trpc.budget.getProjectSummary.queryOptions({
-projectId,
-}),
-);
-router.back();
-},
-}),
+	trpc.budget.updateProject.mutationOptions({
+	onSuccess: () => {
+		void queryClient.invalidateQueries(
+			trpc.budget.getProjects.queryOptions(),
+		);
+		void queryClient.invalidateQueries(
+			trpc.budget.getProjectSummary.queryOptions({
+				projectId,
+			}),
+		);
+		router.back();
+		},
+	}),
 );
 
 updateMutation.mutate({
-id: projectId,
-data: {
-...data,
-startDate: startDate,
-endDate: endDate,
-},
+	id: projectId,
+	data: {
+		...data,
+		startDate: startDate,
+		endDate: endDate,
+	},
 });
 </code>
+
+You MUST INVALIDATE related queries after running a mutation! This will make the dependent content refresh.
 
 When making database queries, use:
 <code>
@@ -62,6 +64,27 @@ To create test data, run \`pnpm --filter @acme/db generate\` to generate the sql
 
 Do NOT include mock data ANYWHERE else, ONLY PUT THE MOCK DATA IN THE DATABASE.
 To push the SQL to the database, run: \`pnpm --filter @acme/db migrate\` 
+
+For database migrations in development:
+1. Generate migrations: pnpm --filter @acme/db generate
+2. Review the SQL in drizzle/*.sql files
+3. Apply migrations: pnpm --filter @acme/db migrate
+4. If tables already exist, consider dropping them or using a fresh database
+
+
+When using Drizzle ORM for database operations:
+- For string searches, use the 'like' function: like(column, pattern)
+- For array operations, use 'inArray': inArray(column, values)
+- Import these functions explicitly from '@acme/db'
+
+When you get a request from the user, follow these steps:
+- Plan out what you need to do, with requirements
+- Start by editing the database schema, adding in all of the tables
+- Add TRPC endpoints
+- Edit the mobile app, calling TRPC endpoints
+- Make sure you follow my instructions on adding trpc endpoints
+- Make sure you you invalidate the right queries
+- Generate mock data in the SQL database
 `;
 
 // Define the file paths to include in the prompt

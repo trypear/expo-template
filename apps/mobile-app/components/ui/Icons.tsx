@@ -34,6 +34,41 @@ export const icons = {
       <Path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" />
     </Svg>
   ),
+  calendar: (props: SvgProps) => (
+    <Svg
+      width={24}
+      height={24}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={props.color as string}
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <Path d="M8 2v4" />
+      <Path d="M16 2v4" />
+      <Path d="M3 10h18" />
+      <Path d="M21 6v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z" />
+    </Svg>
+  ),
+  "academic-cap": (props: SvgProps) => (
+    <Svg
+      width={24}
+      height={24}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={props.color as string}
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <Path d="M12 2L2 7l10 5 10-5-10-5z" />
+      <Path d="M2 17l10 5 10-5" />
+      <Path d="M2 12l10 5 10-5" />
+    </Svg>
+  ),
   settings: (props: SvgProps) => (
     <Svg
       width={24}

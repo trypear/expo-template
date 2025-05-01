@@ -1,11 +1,7 @@
 import React from "react";
-import { Platform } from "react-native";
 import { Tabs } from "expo-router";
-import { HapticTab } from "@/components/HapticTab";
-import { Icon } from "@/components/ui/Icons";
-import TabBarBackground from "@/components/ui/TabBarBackground";
-import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -13,48 +9,59 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
-        headerShown: false,
-        tabBarButton: HapticTab,
-        tabBarBackground: TabBarBackground,
-        tabBarItemStyle: {
-          padding: 5,
-          margin: 0,
-          height: "100%",
+        tabBarActiveTintColor: "#FF4500", // Reddit orange
+        tabBarInactiveTintColor: colorScheme === "dark" ? "#888" : "#666",
+        tabBarStyle: {
+          backgroundColor: colorScheme === "dark" ? "#1a1a1a" : "#fff",
         },
-        tabBarStyle: Platform.select({
-          ios: {
-            position: "absolute",
-            bottom: 0,
-            marginBottom: 0,
-            paddingBottom: 0,
-            height: 65,
-            overflow: "hidden",
-          },
-          default: {
-            marginBottom: 0,
-            paddingBottom: 0,
-            height: 45,
-            overflow: "hidden",
-          },
-        }),
+        headerStyle: {
+          backgroundColor: colorScheme === "dark" ? "#1a1a1a" : "#fff",
+        },
+        headerTintColor: colorScheme === "dark" ? "#fff" : "#000",
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          tabBarIcon: ({ color }) => (
-            <Icon size={28} name="house" color={color} />
+          title: "Home",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="communities"
+        options={{
+          title: "Communities",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="people" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="create"
+        options={{
+          title: "Create",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="add-circle" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: "Profile",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="person" size={size} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="Settings"
         options={{
-          tabBarIcon: ({ color }) => (
-            <Icon size={28} name="settings" color={color} />
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="settings-outline" size={size} color={color} />
           ),
-          title: "",
         }}
       />
     </Tabs>

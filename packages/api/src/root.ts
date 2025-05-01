@@ -1,10 +1,14 @@
 import { authRouter } from "./router/auth";
-import { testRouter } from "./router/test";
+import { communityRouter } from "./router/community";
+import { postRouter } from "./router/post";
+import { commentRouter } from "./router/comment";
 import { createTRPCRouter } from "./trpc";
 
 export const appRouter = createTRPCRouter({
   auth: authRouter,
-  test: testRouter,
+  community: communityRouter,
+  post: postRouter,
+  comment: commentRouter,
 });
 
 // export type definition of API

@@ -54,7 +54,9 @@ db.select().from(user).innerJoin(account, eqi(account.userId, user.id)).where(eq
 As this throws errors when you might be comparing IDs that will never match.
 
 When editing the db, you must use the 'createTable' (auto gens prefixed id, createdAt and updatedAt) and 'fk' (which is used to help with typesafe id comparisons + id prefixing).
-Prefixed IDs are setup to add the prefix on the APPLICATION LEVEL VIA DRIZZLE. They are NOT required to be included.
+Prefixed IDs are setup to add the prefix on the APPLICATION LEVEL VIA DRIZZLE. They are NOT required to be included, however you WILL need to do \`table.id.mapFromDriver(value)\` when using the sql\`\` tag.
+Avoid using the SQL tag wherever possible, and DO NOT FORGET TO MAP THE ULIDS WHEN YOU USE RAW SQL.
+When you are generating SQL for migrations, you MUST NOT INCLUDE THIS PREFIX!
 
 To create test data, run \`pnpm --filter @acme/db generate\` to generate the sql from the drizzle schema, then edit /packages/database/drizzle/{file}.sql, you MUST run this generate command for drizzle to be happy.
 

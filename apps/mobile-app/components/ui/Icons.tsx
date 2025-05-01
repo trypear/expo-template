@@ -34,6 +34,25 @@ export const icons = {
       <Path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" />
     </Svg>
   ),
+  notes: (props: SvgProps) => (
+    <Svg
+      width={24}
+      height={24}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={props.color as string}
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <Path d="M14 3v4a1 1 0 0 0 1 1h4" />
+      <Path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z" />
+      <Path d="M9 9h1" />
+      <Path d="M9 13h6" />
+      <Path d="M9 17h6" />
+    </Svg>
+  ),
   settings: (props: SvgProps) => (
     <Svg
       width={24}

@@ -19,6 +19,8 @@ export const Colors = {
     positive: '#34C759',
     negative: '#FF3B30',
     secondaryText: '#687076',
+    placeholderText: '#A1A1AA',
+    border: '#E5E7EB',
     btnColor: "#11181C",
     btnText: "#000000",
     // New colors for charts and cards
@@ -43,6 +45,8 @@ export const Colors = {
     positive: '#32D74B',
     negative: '#FF453A',
     secondaryText: '#9BA1A6',
+    placeholderText: '#71717A',
+    border: '#374151',
     btnColor: "#FFFFFF",
     btnText: "#11181C",
     // New colors for charts and cards

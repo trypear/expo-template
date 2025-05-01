@@ -53,3 +53,24 @@ export const session = createTable("session", {
 
 export type Session = typeof session.$inferSelect;
 export type NewSession = typeof session.$inferInsert;
+
+export const note = createTable(
+  "note",
+  {
+    title: varchar({ length: 255 }).notNull(),
+    content: text(),
+    userId: fk("userId", () => user, { onDelete: "cascade" }),
+    createdAt: timestamp({ mode: "date", withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp({ mode: "date", withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("note_user_id_idx").on(t.userId)
+  ]
+);
+
+export type Note = typeof note.$inferSelect;
+export type NewNote = typeof note.$inferInsert;

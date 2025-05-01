@@ -1,10 +1,21 @@
-// import { createInsertSchema } from "drizzle-zod";
-// import { z } from "zod";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
+import { note } from "./schema";
 
-// const commonOmitFields = {
-// 	id: true,
-// 	createdAt: true,
-// 	updatedAt: true,
-// } as const;
+// Keeping this for future use when needed
+const _commonOmitFields = {
+	id: true,
+	createdAt: true,
+	updatedAt: true,
+} as const;
 
-// add in zod schemas here
+// Note schemas
+export const insertNoteSchema = createInsertSchema(note, {
+	title: z.string().min(1).max(255),
+	content: z.string().optional(),
+});
+
+export const updateNoteSchema = insertNoteSchema.partial();
+
+export type InsertNote = z.infer<typeof insertNoteSchema>;
+export type UpdateNote = z.infer<typeof updateNoteSchema>;

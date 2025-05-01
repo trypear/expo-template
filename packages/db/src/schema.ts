@@ -1,4 +1,4 @@
-import { uniqueIndex, index, varchar, text, integer, timestamp } from "drizzle-orm/pg-core";
+import { uniqueIndex, index, varchar, text, integer, timestamp, boolean, date } from "drizzle-orm/pg-core";
 import { createTable, fk, lower } from "./utils";
 
 export const user = createTable(
@@ -53,3 +53,36 @@ export const session = createTable("session", {
 
 export type Session = typeof session.$inferSelect;
 export type NewSession = typeof session.$inferInsert;
+
+export const fact = createTable(
+  "fact",
+  {
+    content: text().notNull(),
+    category: varchar({ length: 100 }),
+    createdBy: fk("createdBy", () => user),
+    isActive: boolean().notNull().default(true),
+  },
+  (t) => [
+    index("fact_category_idx").on(t.category),
+    index("fact_created_by_idx").on(t.createdBy)
+  ]
+);
+
+export type Fact = typeof fact.$inferSelect;
+export type NewFact = typeof fact.$inferInsert;
+
+export const factQueue = createTable(
+  "factQueue",
+  {
+    factId: fk("factId", () => fact),
+    scheduledDate: date().notNull(),
+    isShown: boolean().notNull().default(false),
+  },
+  (t) => [
+    index("fact_queue_scheduled_date_idx").on(t.scheduledDate),
+    index("fact_queue_fact_id_idx").on(t.factId)
+  ]
+);
+
+export type FactQueue = typeof factQueue.$inferSelect;
+export type NewFactQueue = typeof factQueue.$inferInsert;

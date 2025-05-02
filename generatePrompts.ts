@@ -6,46 +6,6 @@ const baseText = `
 You are using a monorepo and dev is running.
 You are developing a mobile app and will make changes under apps/mobile-app.
 Import using the @acme/x convention and do not change the ts config.
-EXAMPLE MOBILE APP TRPC QUERY:
-<code>
-import { useQuery } from "@tanstack/react-query";
-
-const { data: projects, isLoading } = useQuery(
-	trpc.budget.getProjectSummary.queryOptions({
-		projectId,
-	}),
-);
-</code>
-
-EXAMPLE MUTATION:
-<code>
-import { useMutation } from "@tanstack/react-query";
-
-const updateMutation = useMutation(
-	trpc.budget.updateProject.mutationOptions({
-	onSuccess: () => {
-		void queryClient.invalidateQueries(
-			trpc.budget.getProjects.queryOptions(),
-		);
-		void queryClient.invalidateQueries(
-			trpc.budget.getProjectSummary.queryOptions({
-				projectId,
-			}),
-		);
-		router.back();
-		},
-	}),
-);
-
-updateMutation.mutate({
-	id: projectId,
-	data: {
-		...data,
-		startDate: startDate,
-		endDate: endDate,
-	},
-});
-</code>
 
 You MUST INVALIDATE related queries after running a mutation! This will make the dependent content refresh.
 
@@ -53,15 +13,14 @@ When making database queries, use:
 <code>
 db.select().from(user).innerJoin(account, eqi(account.userId, user.id)).where(eqi(user.id, userIdInput))
 </code>
-As this throws errors when you might be comparing IDs that will never match.
+As the eqi fn throws errors when you might be comparing IDs that will never match.
 
 
 When you get a request from the user, follow these steps:
 - Plan out what you need to do, with requirements
-- Start by editing the database schema, adding in all of the tables (CALL new_task AND USE dave-the-database-nerd MODE )
+- Start by editing the database schema, adding in all of the tables (CALL new_task AND USE dave-the-database-nerd MODE) (there will always be packages/db/src/schema.ts present but it will always need editing)
 - Add TRPC endpoints (CALL new_task AND USE timothy-the-trpc-expert MODE)
-- Edit the mobile app, calling TRPC endpoints
-- Make sure you follow my instructions on adding trpc endpoints
+- Edit the mobile app, calling TRPC endpoints (USE pimm-the-react-native-expert FOR EVERYTHING on app/mobile-app)
 - Make sure you you invalidate the right queries
 - Generate mock data in the SQL database
 
@@ -75,9 +34,9 @@ import { assert } from "@acme/utils";
 
 assert(!!value, "value should be defined")
 
-WHENEVER YOU ARE DOING A DATABASE OPERATION, CALL dave-the-database-nerd TO DO IT IN A new_task!
-CALL timothy-the-trpc-expert FOR ALL packages/api ROUTER TRPC SETUP AND CONFIG.
-`;
+FOLLOW THE STEPS AND CALL new_task WITh THE EXPERT NAMES.
+If you ever gets stuck, tell me where you are getting stuck, don't keep trying over and over again
+`;// TODO: remove stuck sentence for creator
 
 // Define the file paths to include in the prompt
 const filePaths = [

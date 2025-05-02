@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Pressable,
   RefreshControl,
   TextInput,
   View,
@@ -12,6 +13,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { api } from "@/hooks/api";
 import { useUser } from "@/hooks/auth";
+import { Ionicons } from "@expo/vector-icons";
 import {
   useInfiniteQuery,
   useMutation,
@@ -39,21 +41,32 @@ const CommentCard = ({
   onDelete: () => void;
 }) => {
   return (
-    <ThemedView className="mb-4 rounded-lg border border-gray-200 p-4 dark:border-gray-700">
-      <View className="mb-2 flex-row items-center justify-between">
-        <ThemedText className="text-sm text-gray-500">
-          By {item.author.name ?? "Unknown"}
+    <View className="mb-4 overflow-hidden rounded-xl bg-white shadow-sm dark:bg-gray-800">
+      <View className="p-4">
+        <View className="mb-2 flex-row items-center justify-between">
+          <View className="flex-row items-center">
+            <Ionicons name="person-circle-outline" size={20} color="#666" />
+            <ThemedText className="ml-2 text-sm text-gray-500">
+              {item.author.name ?? "Unknown"}
+            </ThemedText>
+          </View>
+          {canDelete && (
+            <Pressable
+              onPress={onDelete}
+              className="flex-row items-center rounded-full bg-red-100 px-3 py-1 dark:bg-red-900"
+            >
+              <Ionicons name="trash-outline" size={16} color="#EF4444" />
+              <ThemedText className="ml-1 text-xs font-medium text-red-500">
+                Delete
+              </ThemedText>
+            </Pressable>
+          )}
+        </View>
+        <ThemedText className="text-gray-600 dark:text-gray-400">
+          {item.comment.content}
         </ThemedText>
-        {canDelete && (
-          <ThemedText className="text-red-500" onPress={onDelete}>
-            Delete
-          </ThemedText>
-        )}
       </View>
-      <ThemedText className="text-gray-600 dark:text-gray-400">
-        {item.comment.content}
-      </ThemedText>
-    </ThemedView>
+    </View>
   );
 };
 
@@ -152,17 +165,20 @@ export default function AnnouncementDetailScreen() {
 
   if (isLoadingAnnouncement || isLoadingComments) {
     return (
-      <View className="flex-1 items-center justify-center">
+      <ThemedView className="flex-1 items-center justify-center bg-gray-50 dark:bg-gray-900">
         <ActivityIndicator size="large" />
-      </View>
+      </ThemedView>
     );
   }
 
   if (!announcement) {
     return (
-      <View className="flex-1 items-center justify-center">
-        <ThemedText>Announcement not found</ThemedText>
-      </View>
+      <ThemedView className="flex-1 items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <Ionicons name="alert-circle-outline" size={48} color="#666" />
+        <ThemedText className="mt-4 text-gray-500">
+          Announcement not found
+        </ThemedText>
+      </ThemedView>
     );
   }
 
@@ -171,7 +187,7 @@ export default function AnnouncementDetailScreen() {
     isAdmin || (currentUser && currentUser.id === commentUserId);
 
   return (
-    <ThemedView className="flex-1">
+    <ThemedView className="flex-1 bg-gray-50 dark:bg-gray-900">
       <Stack.Screen
         options={{
           title: "Announcement",
@@ -179,62 +195,104 @@ export default function AnnouncementDetailScreen() {
         }}
       />
       <View className="flex-1 p-4">
-        <View className="mb-4">
-          <View className="mb-2 flex-row items-center justify-between">
-            <ThemedText className="text-xl font-bold">
+        <View className="mb-4 overflow-hidden rounded-xl bg-white p-6 shadow-sm dark:bg-gray-800">
+          <View className="mb-4 flex-row items-start justify-between">
+            <ThemedText className="flex-1 text-2xl font-bold">
               {announcement.announcement.title}
             </ThemedText>
             {announcement.announcement.isPinned && (
-              <ThemedText className="text-blue-500">📌 Pinned</ThemedText>
+              <View className="ml-2 rounded-full bg-red-100 px-3 py-1 dark:bg-red-900">
+                <View className="flex-row items-center">
+                  <Ionicons name="pin" size={16} color="#FF4444" />
+                  <ThemedText className="ml-1 text-xs font-medium text-red-500">
+                    Pinned
+                  </ThemedText>
+                </View>
+              </View>
             )}
           </View>
-          <ThemedText className="mb-4 text-gray-600 dark:text-gray-400">
+
+          <ThemedText className="mb-4 text-base leading-relaxed text-gray-600 dark:text-gray-400">
             {announcement.announcement.content}
           </ThemedText>
-          <ThemedText className="text-sm text-gray-500">
-            By {announcement.createdBy.name ?? "Unknown"}
-          </ThemedText>
+
+          <View className="flex-row items-center space-x-4">
+            <View className="flex-row items-center">
+              <Ionicons name="person-outline" size={16} color="#666" />
+              <ThemedText className="ml-2 text-sm text-gray-500">
+                {announcement.createdBy.name ?? "Unknown"}
+              </ThemedText>
+            </View>
+            <View className="flex-row items-center">
+              <Ionicons name="time-outline" size={16} color="#666" />
+              <ThemedText className="ml-2 text-sm text-gray-500">
+                {announcement.announcement.createdAt
+                  ? new Date(
+                      announcement.announcement.createdAt,
+                    ).toLocaleDateString()
+                  : "No date"}
+              </ThemedText>
+            </View>
+          </View>
         </View>
 
         {isAdmin && (
           <View className="mb-4 flex-row space-x-2">
-            <ThemedView
-              className="flex-1 rounded-lg bg-blue-500 p-3"
-              onTouchEnd={() => void togglePinMutation.mutate()}
+            <Pressable
+              onPress={() => togglePinMutation.mutate()}
+              className="flex-1 flex-row items-center justify-center rounded-lg bg-blue-500 p-3"
             >
-              <ThemedText className="text-center font-bold text-white">
+              <Ionicons
+                name={
+                  announcement.announcement.isPinned ? "pin-outline" : "pin"
+                }
+                size={20}
+                color="white"
+              />
+              <ThemedText className="ml-2 font-bold text-white">
                 {announcement.announcement.isPinned ? "Unpin" : "Pin"}
               </ThemedText>
-            </ThemedView>
-            <ThemedView
-              className="flex-1 rounded-lg bg-red-500 p-3"
-              onTouchEnd={() => void deleteAnnouncementMutation.mutate()}
+            </Pressable>
+            <Pressable
+              onPress={() => deleteAnnouncementMutation.mutate()}
+              className="flex-1 flex-row items-center justify-center rounded-lg bg-red-500 p-3"
             >
-              <ThemedText className="text-center font-bold text-white">
+              <Ionicons name="trash-outline" size={20} color="white" />
+              <ThemedText className="ml-2 font-bold text-white">
                 Delete
               </ThemedText>
-            </ThemedView>
+            </Pressable>
           </View>
         )}
 
         {currentUser && (
           <View className="mb-4 flex-row space-x-2">
             <TextInput
-              className="flex-1 rounded-lg bg-gray-100 p-3 dark:bg-gray-800"
+              className="flex-1 rounded-lg border border-gray-200 bg-white px-4 py-3 text-base text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
               placeholder="Add a comment..."
+              placeholderTextColor="#666"
               value={newComment}
               onChangeText={setNewComment}
             />
-            <ThemedView
-              className="rounded-lg bg-blue-500 px-4 py-3"
-              onTouchEnd={() => {
+            <Pressable
+              onPress={() => {
                 if (newComment.trim()) {
-                  void createCommentMutation.mutate(newComment.trim());
+                  createCommentMutation.mutate(newComment.trim());
                 }
               }}
+              disabled={createCommentMutation.isPending || !newComment.trim()}
+              className={`flex-row items-center justify-center rounded-lg px-4 ${
+                createCommentMutation.isPending || !newComment.trim()
+                  ? "bg-blue-300 dark:bg-blue-800"
+                  : "bg-blue-500 dark:bg-blue-600"
+              }`}
             >
-              <ThemedText className="font-bold text-white">Send</ThemedText>
-            </ThemedView>
+              <Ionicons
+                name={createCommentMutation.isPending ? "time-outline" : "send"}
+                size={20}
+                color="white"
+              />
+            </Pressable>
           </View>
         )}
 
@@ -244,9 +302,7 @@ export default function AnnouncementDetailScreen() {
             <CommentCard
               item={item}
               canDelete={canDeleteComment(item.author.id)}
-              onDelete={() =>
-                void deleteCommentMutation.mutate(item.comment.id)
-              }
+              onDelete={() => deleteCommentMutation.mutate(item.comment.id)}
             />
           )}
           keyExtractor={(item) => item.comment.id}
@@ -270,9 +326,12 @@ export default function AnnouncementDetailScreen() {
             ) : null
           }
           ListEmptyComponent={
-            <ThemedText className="py-4 text-center">
-              No comments yet
-            </ThemedText>
+            <View className="items-center justify-center rounded-xl bg-white p-8 dark:bg-gray-800">
+              <Ionicons name="chatbubbles-outline" size={48} color="#666" />
+              <ThemedText className="mt-4 text-center text-gray-500">
+                No comments yet
+              </ThemedText>
+            </View>
           }
         />
       </View>

@@ -1,6 +1,6 @@
 import type { TRPCRouterRecord } from "@trpc/server";
 import { z } from "zod";
-import { desc, eq } from "drizzle-orm";
+import { count, desc, eq } from "drizzle-orm";
 
 import { announcement, comment, user } from "@acme/db";
 
@@ -28,9 +28,12 @@ export const announcementRouter = {
 						id: user.id,
 						name: user.name,
 					},
+					commentCount: count(comment.id),
 				})
 				.from(announcement)
 				.innerJoin(user, eq(announcement.createdById, user.id))
+				.leftJoin(comment, eq(comment.announcementId, announcement.id))
+				.groupBy(announcement.id, user.id, user.name)
 				.orderBy(desc(announcement.id))
 				.limit(limit)
 				.offset(offset);
@@ -60,9 +63,12 @@ export const announcementRouter = {
 						id: user.id,
 						name: user.name,
 					},
+					commentCount: count(comment.id),
 				})
 				.from(announcement)
 				.innerJoin(user, eq(announcement.id, input.id))
+				.leftJoin(comment, eq(comment.announcementId, announcement.id))
+				.groupBy(announcement.id, user.id, user.name)
 				.limit(1);
 
 			if (!announcementData[0]) {

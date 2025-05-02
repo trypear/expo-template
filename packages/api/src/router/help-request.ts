@@ -132,4 +132,55 @@ export const helpRequestRouter = {
 				},
 			};
 		}),
+	getById: protectedProcedure
+		.input(z.object({
+			id: z.string(),
+		}))
+		.query(async ({ ctx, input }) => {
+			// Get the user's role
+			const [userData] = await ctx.db
+				.select({
+					userRole: user.userRole,
+				})
+				.from(user)
+				.where(eq(user.id, ctx.session.user.id))
+				.limit(1);
+
+			if (!userData) {
+				throw new Error("User not found");
+			}
+
+			// Build the query conditions
+			const conditions = [eq(helpRequest.id, input.id)];
+
+			// If not admin, only allow viewing own requests
+			if (userData.userRole !== "admin") {
+				conditions.push(eq(helpRequest.createdById, ctx.session.user.id));
+			}
+
+			const [request] = await ctx.db
+				.select({
+					helpRequest: {
+						id: helpRequest.id,
+						title: helpRequest.title,
+						description: helpRequest.description,
+						requestStatus: helpRequest.requestStatus,
+						createdAt: helpRequest.createdAt,
+					},
+					createdBy: {
+						id: user.id,
+						name: user.name,
+					},
+				})
+				.from(helpRequest)
+				.innerJoin(user, eq(helpRequest.createdById, user.id))
+				.where(and(...conditions))
+				.limit(1);
+
+			if (!request) {
+				throw new Error("Help request not found");
+			}
+
+			return request;
+		}),
 } satisfies TRPCRouterRecord;

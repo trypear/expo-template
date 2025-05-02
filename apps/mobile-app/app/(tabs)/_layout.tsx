@@ -28,8 +28,9 @@ export default function TabLayout() {
         name="help"
         options={{
           title: "Help Requests",
+          headerTitle: "Help Requests",
           tabBarIcon: ({ color }) => (
-            <TabBarIcon name="help-circle" color={color} />
+            <TabBarIcon name="help-buoy" color={color} />
           ),
         }}
       />

@@ -8,6 +8,13 @@
       "when": 1746198636682,
       "tag": "0000_careless_wild_pack",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1746209891029,
+      "tag": "0001_heavy_enchantress",
+      "breakpoints": true
     }
   ]
 }

@@ -3,29 +3,31 @@ import { Pressable, ScrollView, TextInput, View } from "react-native";
 import { useRouter } from "expo-router";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-import { api } from "@/hooks/api";
+import { trpc } from "@/hooks/api";
 import { Ionicons } from "@expo/vector-icons";
 import { useMutation } from "@tanstack/react-query";
 
-export default function NewAnnouncementScreen() {
+export default function NewHelpRequestScreen() {
   const router = useRouter();
   const [title, setTitle] = React.useState("");
-  const [content, setContent] = React.useState("");
-  const [isPinned, setIsPinned] = React.useState(false);
+  const [description, setDescription] = React.useState("");
 
-  const createMutation = useMutation({
-    mutationFn: () =>
-      api.announcement.create.mutate({
-        title: title.trim(),
-        content: content.trim(),
-        isPinned,
-      }),
-    onSuccess: () => {
-      router.back();
-    },
-  });
+  const createMutation = useMutation(
+    trpc.helpRequest.create.mutationOptions({
+      onSuccess: () => {
+        router.back();
+      },
+    }),
+  );
 
-  const isValid = title.trim() && content.trim();
+  const handleSubmit = () => {
+    if (!title.trim() || !description.trim()) return;
+
+    createMutation.mutate({
+      title: title.trim(),
+      description: description.trim(),
+    });
+  };
 
   return (
     <ThemedView className="flex-1 bg-gray-50 dark:bg-gray-900">
@@ -38,56 +40,36 @@ export default function NewAnnouncementScreen() {
               </ThemedText>
               <TextInput
                 className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-base text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                placeholder="Enter announcement title"
+                placeholder="Enter a title for your request"
                 placeholderTextColor="#666"
                 value={title}
                 onChangeText={setTitle}
               />
             </View>
 
-            <View className="mb-4">
+            <View>
               <ThemedText className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                Content
+                Description
               </ThemedText>
               <TextInput
                 className="h-40 rounded-lg border border-gray-200 bg-white px-4 py-3 text-base text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-                placeholder="Enter announcement content"
+                placeholder="Describe your request in detail"
                 placeholderTextColor="#666"
-                value={content}
-                onChangeText={setContent}
+                value={description}
+                onChangeText={setDescription}
                 multiline
                 textAlignVertical="top"
               />
             </View>
-
-            <Pressable
-              onPress={() => setIsPinned(!isPinned)}
-              className="flex-row items-center"
-            >
-              <View
-                className={`mr-2 h-5 w-5 items-center justify-center rounded ${
-                  isPinned ? "bg-blue-500" : "bg-gray-200 dark:bg-gray-700"
-                }`}
-              >
-                {isPinned && (
-                  <Ionicons name="checkmark" size={16} color="white" />
-                )}
-              </View>
-              <ThemedText className="text-sm text-gray-700 dark:text-gray-300">
-                Pin this announcement
-              </ThemedText>
-            </Pressable>
           </View>
 
           <Pressable
-            onPress={() => {
-              if (isValid) {
-                createMutation.mutate();
-              }
-            }}
-            disabled={createMutation.isPending || !isValid}
+            onPress={handleSubmit}
+            disabled={
+              createMutation.isPending || !title.trim() || !description.trim()
+            }
             className={`flex-row items-center justify-center rounded-lg p-4 ${
-              createMutation.isPending || !isValid
+              createMutation.isPending || !title.trim() || !description.trim()
                 ? "bg-blue-300 dark:bg-blue-800"
                 : "bg-blue-500 dark:bg-blue-600"
             }`}
@@ -102,9 +84,7 @@ export default function NewAnnouncementScreen() {
               color="white"
             />
             <ThemedText className="ml-2 font-medium text-white">
-              {createMutation.isPending
-                ? "Publishing..."
-                : "Publish Announcement"}
+              {createMutation.isPending ? "Submitting..." : "Submit Request"}
             </ThemedText>
           </Pressable>
         </View>

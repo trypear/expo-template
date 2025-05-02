@@ -6,13 +6,8 @@ import type {
 } from "@auth/core/adapters"
 import type { Awaitable } from "@auth/core/types"
 import type { Database } from "@acme/db/client"
-import type { userRoleEnum } from "@acme/db";
 import { eqi, account, session, user, and } from "@acme/db"
 import { getFirstEl, parseFirstEl } from "@acme/utils"
-
-export type CustomAdapterUser = AdapterUser & {
-	userRole: typeof userRoleEnum.enumValues[number];
-}
 
 export function CustomDrizzleAdapter<TAdapterUser extends AdapterUser>(
 	client: Database,

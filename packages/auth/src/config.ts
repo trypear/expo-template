@@ -1,29 +1,27 @@
 import type {
-  DefaultSession,
   NextAuthConfig,
   Session as NextAuthSession,
+  User,
 } from "next-auth";
 import { skipCSRFCheck } from "@auth/core";
 import Discord from "next-auth/providers/discord";
 import { db } from "@acme/db/client";
 import { env } from "../env";
 import { CustomDrizzleAdapter } from "./drizzleAdapter";
-import type { userRoleEnum } from "@acme/db";
+import type { USER_ROLES } from "@acme/db";
 import type { AdapterUser } from "next-auth/adapters";
+
+type BaseUser = User & { userRole: typeof USER_ROLES[number]; }
 
 declare module "next-auth" {
   interface Session {
     user: {
       id: string;
-      userRole: typeof userRoleEnum.enumValues[number];
-    } & DefaultSession["user"];
+    } & BaseUser;
   }
 }
 
-type CustomAdapterUser = AdapterUser & {
-  userRole: typeof userRoleEnum.enumValues[number];
-}
-
+type CustomAdapterUser = AdapterUser & BaseUser;
 
 const adapter = CustomDrizzleAdapter<CustomAdapterUser>(db);
 

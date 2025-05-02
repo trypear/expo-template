@@ -1,11 +1,15 @@
 import { uniqueIndex, index, varchar, text, integer, timestamp } from "drizzle-orm/pg-core";
 import { createTable, fk, lower } from "./utils";
 
+// Edit the type to add user roles for RBAC
+export const USER_ROLES = ["user", "admin"] as const;
+
 // *****_____*****_____*****_____*****_____*****_____*****_____
 // DO NOT REMOVE OR RENAME, ONLY ADD TO THESE TABLES IF REQUIRED
 // NEXT AUTH IS DEPENDENT ON THESE HAVING THESE GIVEN COLUMNS
 // MAKE ALL EXTRA FIELDS OPTIONAL - OR HAVE DEFAULTS
 // *****_____*****_____*****_____*****_____*****_____*****_____
+
 export const user = createTable(
   "user",
   {
@@ -13,6 +17,7 @@ export const user = createTable(
     email: varchar({ length: 255 }).notNull(),
     emailVerified: timestamp({ mode: "date", withTimezone: true }),
     image: varchar({ length: 255 }),
+    userRole: varchar({ enum: USER_ROLES }).default("user"),
   },
   (t) => [
     uniqueIndex("user_email_idx").on(lower(t.email))

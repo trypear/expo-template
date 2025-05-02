@@ -6,39 +6,38 @@ import type {
 } from "@auth/core/adapters"
 import type { Awaitable } from "@auth/core/types"
 import type { Database } from "@acme/db/client"
+import type { userRoleEnum } from "@acme/db";
 import { eqi, account, session, user, and } from "@acme/db"
 import { getFirstEl, parseFirstEl } from "@acme/utils"
 
-export function CustomDrizzleAdapter(
+export type CustomAdapterUser = AdapterUser & {
+	userRole: typeof userRoleEnum.enumValues[number];
+}
+
+export function CustomDrizzleAdapter<TAdapterUser extends AdapterUser>(
 	client: Database,
-): Adapter {
+) {
 	return {
-		async createUser({ email, emailVerified, id, image, name }: AdapterUser) {
+		async createUser(data: TAdapterUser) {
 			return client
 				.insert(user)
-				.values({
-					email,
-					emailVerified,
-					id,
-					image,
-					name,
-				})
+				.values(data)
 				.returning()
-				.then(parseFirstEl) as Awaitable<AdapterUser>
+				.then(parseFirstEl) as Awaitable<TAdapterUser>
 		},
 		async getUser(userId: string) {
 			return client
 				.select()
 				.from(user)
 				.where(eqi(user.id, userId))
-				.then(getFirstEl) as Awaitable<AdapterUser | null>
+				.then(getFirstEl) as Awaitable<TAdapterUser | null>
 		},
 		async getUserByEmail(email: string) {
 			return client
 				.select()
 				.from(user)
 				.where(eqi(user.email, email))
-				.then(getFirstEl) as Awaitable<AdapterUser | null>
+				.then(getFirstEl) as Awaitable<TAdapterUser | null>
 		},
 		async createSession(data: {
 			sessionToken: string
@@ -55,10 +54,10 @@ export function CustomDrizzleAdapter(
 				.innerJoin(user, eqi(user.id, session.userId))
 				.then(getFirstEl) as Awaitable<{
 					session: AdapterSession
-					user: AdapterUser
+					user: TAdapterUser
 				} | null>
 		},
-		async updateUser(data: Partial<AdapterUser> & Pick<AdapterUser, "id">) {
+		async updateUser(data: Partial<TAdapterUser> & Pick<TAdapterUser, "id">) {
 			if (!data.id) {
 				throw new Error("No user id.")
 			}
@@ -68,7 +67,7 @@ export function CustomDrizzleAdapter(
 				.set(data)
 				.where(eqi(user.id, data.id))
 				.returning()
-				.then(parseFirstEl) as Awaitable<AdapterUser>
+				.then(parseFirstEl) as Awaitable<TAdapterUser>
 		},
 		async updateSession(
 			data: Partial<AdapterSession> & Pick<AdapterSession, "sessionToken">
@@ -99,7 +98,7 @@ export function CustomDrizzleAdapter(
 					)
 				)
 				.then(getFirstEl)
-				.then(x => (x !== null ? x.user : null)) as Awaitable<AdapterUser | null>
+				.then(x => (x !== null ? x.user : null)) as Awaitable<TAdapterUser | null>
 		},
 		async deleteSession(sessionToken: string) {
 			await client
@@ -153,5 +152,5 @@ export function CustomDrizzleAdapter(
 		updateAuthenticatorCounter: undefined,
 		createVerificationToken: undefined,
 		useVerificationToken: undefined,
-	}
+	} satisfies Adapter
 }

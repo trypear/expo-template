@@ -5,21 +5,27 @@ import type {
 } from "next-auth";
 import { skipCSRFCheck } from "@auth/core";
 import Discord from "next-auth/providers/discord";
-
 import { db } from "@acme/db/client";
-
 import { env } from "../env";
 import { CustomDrizzleAdapter } from "./drizzleAdapter";
+import type { userRoleEnum } from "@acme/db";
+import type { AdapterUser } from "next-auth/adapters";
 
 declare module "next-auth" {
   interface Session {
     user: {
       id: string;
+      userRole: typeof userRoleEnum.enumValues[number];
     } & DefaultSession["user"];
   }
 }
 
-const adapter = CustomDrizzleAdapter(db);
+type CustomAdapterUser = AdapterUser & {
+  userRole: typeof userRoleEnum.enumValues[number];
+}
+
+
+const adapter = CustomDrizzleAdapter<CustomAdapterUser>(db);
 
 export const isSecureContext = env.NODE_ENV !== "development";
 

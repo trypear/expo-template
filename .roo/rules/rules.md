@@ -2,46 +2,6 @@
 You are using a monorepo and dev is running.
 You are developing a mobile app and will make changes under apps/mobile-app.
 Import using the @acme/x convention and do not change the ts config.
-EXAMPLE MOBILE APP TRPC QUERY:
-<code>
-import { useQuery } from "@tanstack/react-query";
-
-const { data: projects, isLoading } = useQuery(
-	trpc.budget.getProjectSummary.queryOptions({
-		projectId,
-	}),
-);
-</code>
-
-EXAMPLE MUTATION:
-<code>
-import { useMutation } from "@tanstack/react-query";
-
-const updateMutation = useMutation(
-	trpc.budget.updateProject.mutationOptions({
-	onSuccess: () => {
-		void queryClient.invalidateQueries(
-			trpc.budget.getProjects.queryOptions(),
-		);
-		void queryClient.invalidateQueries(
-			trpc.budget.getProjectSummary.queryOptions({
-				projectId,
-			}),
-		);
-		router.back();
-		},
-	}),
-);
-
-updateMutation.mutate({
-	id: projectId,
-	data: {
-		...data,
-		startDate: startDate,
-		endDate: endDate,
-	},
-});
-</code>
 
 You MUST INVALIDATE related queries after running a mutation! This will make the dependent content refresh.
 
@@ -49,15 +9,14 @@ When making database queries, use:
 <code>
 db.select().from(user).innerJoin(account, eqi(account.userId, user.id)).where(eqi(user.id, userIdInput))
 </code>
-As this throws errors when you might be comparing IDs that will never match.
+As the eqi fn throws errors when you might be comparing IDs that will never match.
 
 
 When you get a request from the user, follow these steps:
 - Plan out what you need to do, with requirements
-- Start by editing the database schema, adding in all of the tables (CALL new_task AND USE THE database-nerd MODE )
-- Add TRPC endpoints
-- Edit the mobile app, calling TRPC endpoints
-- Make sure you follow my instructions on adding trpc endpoints
+- Start by editing the database schema, adding in all of the tables (CALL new_task AND USE dave-the-database-nerd MODE) (there will always be packages/db/src/schema.ts present but it will always need editing)
+- Add TRPC endpoints (CALL new_task AND USE timothy-the-trpc-expert MODE)
+- Edit the mobile app, calling TRPC endpoints (USE pimm-the-react-native-expert FOR EVERYTHING on app/mobile-app)
 - Make sure you you invalidate the right queries
 - Generate mock data in the SQL database
 
@@ -71,10 +30,11 @@ import { assert } from "@acme/utils";
 
 assert(!!value, "value should be defined")
 
-WHENEVER YOU ARE DOING A DATABASE OPERATION, CALL THE database-nerd TO DO IT IN A new_task!
+FOLLOW THE STEPS AND CALL new_task WITh THE EXPERT NAMES.
+If you ever gets stuck, tell me where you are getting stuck, don't keep trying over and over again
 ## File: packages/db/src/schema.ts
 ```
-import { uniqueIndex, index, varchar, text, integer, timestamp, date, time } from "drizzle-orm/pg-core";
+import { uniqueIndex, index, varchar, text, integer, timestamp, boolean, time } from "drizzle-orm/pg-core";
 import { createTable, fk, lower } from "./utils";
 
 export const user = createTable(
@@ -84,7 +44,6 @@ export const user = createTable(
     email: varchar({ length: 255 }).notNull(),
     emailVerified: timestamp({ mode: "date", withTimezone: true }),
     image: varchar({ length: 255 }),
-    role: varchar({ length: 20 }).$type<"student" | "teacher" | "admin">().default("student"),
   },
   (t) => [
     uniqueIndex("user_email_idx").on(lower(t.email))
@@ -93,48 +52,6 @@ export const user = createTable(
 
 export type User = typeof user.$inferSelect;
 export type NewUser = typeof user.$inferInsert;
-
-export const course = createTable(
-  "course",
-  {
-    name: varchar({ length: 255 }).notNull(),
-    description: text(),
-    code: varchar({ length: 50 }).notNull(),
-  }
-);
-
-export type Course = typeof course.$inferSelect;
-export type NewCourse = typeof course.$inferInsert;
-
-export const teacher = createTable(
-  "teacher",
-  {
-    userId: fk("userId", () => user, { onDelete: "cascade" }),
-    department: varchar({ length: 255 }),
-  },
-  (t) => [
-    uniqueIndex("teacher_user_id_idx").on(t.userId)
-  ]
-);
-
-export type Teacher = typeof teacher.$inferSelect;
-export type NewTeacher = typeof teacher.$inferInsert;
-
-export const student = createTable(
-  "student",
-  {
-    userId: fk("userId", () => user, { onDelete: "cascade" }),
-    studentId: varchar({ length: 50 }).notNull(),
-    enrollmentYear: integer(),
-  },
-  (t) => [
-    uniqueIndex("student_user_id_idx").on(t.userId),
-    uniqueIndex("student_id_idx").on(t.studentId)
-  ]
-);
-
-export type Student = typeof student.$inferSelect;
-export type NewStudent = typeof student.$inferInsert;
 
 export const account = createTable(
   "account",
@@ -173,121 +90,71 @@ export const session = createTable("session", {
 export type Session = typeof session.$inferSelect;
 export type NewSession = typeof session.$inferInsert;
 
-export const timetable = createTable(
-  "timetable",
+// Farmers Market Schema
+
+export const marketStall = createTable(
+  "market_stall",
   {
-    courseId: fk("courseId", () => course, { onDelete: "cascade" }),
-    teacherId: fk("teacherId", () => teacher, { onDelete: "set null" }),
-    dayOfWeek: integer().notNull(), // 0 = Sunday, 1 = Monday, etc.
-    startTime: time().notNull(),
-    endTime: time().notNull(),
-    location: varchar({ length: 255 }),
-    recurrenceRule: varchar({ length: 255 }), // For handling exceptions, holidays, etc.
+    name: varchar({ length: 255 }).notNull(),
+    description: text(),
+    location: varchar({ length: 255 }).notNull(),
   },
   (t) => [
-    index("timetable_course_id_idx").on(t.courseId),
-    index("timetable_teacher_id_idx").on(t.teacherId)
+    uniqueIndex("stall_name_idx").on(t.name)
   ]
 );
 
-export type Timetable = typeof timetable.$inferSelect;
-export type NewTimetable = typeof timetable.$inferInsert;
+export type MarketStall = typeof marketStall.$inferSelect;
+export type NewMarketStall = typeof marketStall.$inferInsert;
 
-export const studentCourse = createTable(
-  "student_course",
+export const category = createTable(
+  "category",
   {
-    studentId: fk("studentId", () => student, { onDelete: "cascade" }),
-    courseId: fk("courseId", () => course, { onDelete: "cascade" }),
-    enrolledAt: timestamp({ mode: "date", withTimezone: true }).defaultNow(),
+    name: varchar({ length: 255 }).notNull(),
+    description: text(),
   },
   (t) => [
-    uniqueIndex("student_course_unique_idx").on(t.studentId, t.courseId),
-    index("student_course_student_id_idx").on(t.studentId),
-    index("student_course_course_id_idx").on(t.courseId)
+    uniqueIndex("category_name_idx").on(t.name)
   ]
 );
 
-export type StudentCourse = typeof studentCourse.$inferSelect;
-export type NewStudentCourse = typeof studentCourse.$inferInsert;
+export type Category = typeof category.$inferSelect;
+export type NewCategory = typeof category.$inferInsert;
 
-export const attendance = createTable(
-  "attendance",
+export const product = createTable(
+  "product",
   {
-    studentId: fk("studentId", () => student, { onDelete: "cascade" }),
-    timetableId: fk("timetableId", () => timetable, { onDelete: "cascade" }),
-    date: date().notNull(),
-    status: varchar({ length: 20 }).$type<"present" | "absent" | "late" | "excused">().default("absent"),
-    notes: text(),
-    recordedBy: fk("recordedBy", () => user, { onDelete: "set null" }),
-    recordedAt: timestamp({ mode: "date", withTimezone: true }).defaultNow(),
+    name: varchar({ length: 255 }).notNull(),
+    price: integer().notNull(), // Stored in cents/pence
+    isAvailable: boolean().notNull().default(true),
+    stallId: fk("stallId", () => marketStall, { onDelete: "cascade" }).notNull(),
+    categoryId: fk("categoryId", () => category, { onDelete: "set null" }),
   },
   (t) => [
-    uniqueIndex("attendance_unique_idx").on(t.studentId, t.timetableId, t.date),
-    index("attendance_student_id_idx").on(t.studentId),
-    index("attendance_timetable_id_idx").on(t.timetableId),
-    index("attendance_date_idx").on(t.date)
+    index("product_stall_idx").on(t.stallId),
+    index("product_category_idx").on(t.categoryId)
   ]
 );
 
-export type Attendance = typeof attendance.$inferSelect;
-export type NewAttendance = typeof attendance.$inferInsert;
+export type Product = typeof product.$inferSelect;
+export type NewProduct = typeof product.$inferInsert;
 
-// Mock data for user ID: 79db4c0b-7ae6-4173-af02-d0a63e357907
-// This can be used for testing the attendance tracking app
+export const stallSchedule = createTable(
+  "stall_schedule",
+  {
+    stallId: fk("stallId", () => marketStall, { onDelete: "cascade" }).notNull(),
+    dayOfWeek: integer().notNull(), // 0-6 for Sunday-Saturday
+    openTime: time({ precision: 0 }).notNull(),
+    closeTime: time({ precision: 0 }).notNull(),
+  },
+  (t) => [
+    index("schedule_stall_idx").on(t.stallId),
+    uniqueIndex("stall_day_schedule_idx").on(t.stallId, t.dayOfWeek) // One schedule per day per stall
+  ]
+);
 
-/*
-// Create test courses
-INSERT INTO course (name, code, description) VALUES
-('Introduction to Computer Science', 'CS101', 'Fundamentals of computer science and programming'),
-('Data Structures and Algorithms', 'CS201', 'Advanced data structures and algorithm design'),
-('Web Development', 'CS301', 'Modern web development techniques and frameworks'),
-('Mobile App Development', 'CS401', 'Building native and cross-platform mobile applications');
-
-// Create teacher record for the user
-INSERT INTO teacher (user_id, department) VALUES
-('79db4c0b-7ae6-4173-af02-d0a63e357907', 'Computer Science');
-
-// Create student record for the user (for testing both views)
-INSERT INTO student (user_id, student_id, enrollment_year) VALUES
-('79db4c0b-7ae6-4173-af02-d0a63e357907', 'ST12345', 2023);
-
-// Create timetable entries (assuming course IDs 1-4 and teacher ID 1)
-INSERT INTO timetable (course_id, teacher_id, day_of_week, start_time, end_time, location) VALUES
-(1, 1, 1, '09:00', '10:30', 'Room 101'),
-(2, 1, 2, '11:00', '12:30', 'Room 202'),
-(3, 1, 3, '14:00', '15:30', 'Lab 301'),
-(4, 1, 4, '16:00', '17:30', 'Auditorium');
-
-// Enroll the student in all courses (assuming student ID 1 and course IDs 1-4)
-INSERT INTO student_course (student_id, course_id, enrolled_at) VALUES
-(1, 1, CURRENT_TIMESTAMP),
-(1, 2, CURRENT_TIMESTAMP),
-(1, 3, CURRENT_TIMESTAMP),
-(1, 4, CURRENT_TIMESTAMP);
-
-// Create attendance records for the past 4 weeks (assuming student ID 1 and timetable IDs 1-4)
-// For each timetable entry, create 4 attendance records with different statuses
-INSERT INTO attendance (student_id, timetable_id, date, status, notes, recorded_by) VALUES
-(1, 1, '2025-04-07', 'present', NULL, '79db4c0b-7ae6-4173-af02-d0a63e357907'),
-(1, 1, '2025-04-14', 'absent', 'Student was absent', '79db4c0b-7ae6-4173-af02-d0a63e357907'),
-(1, 1, '2025-04-21', 'late', 'Student arrived 10 minutes late', '79db4c0b-7ae6-4173-af02-d0a63e357907'),
-(1, 1, '2025-04-28', 'present', NULL, '79db4c0b-7ae6-4173-af02-d0a63e357907'),
-
-(1, 2, '2025-04-08', 'present', NULL, '79db4c0b-7ae6-4173-af02-d0a63e357907'),
-(1, 2, '2025-04-15', 'present', NULL, '79db4c0b-7ae6-4173-af02-d0a63e357907'),
-(1, 2, '2025-04-22', 'absent', 'Student was absent', '79db4c0b-7ae6-4173-af02-d0a63e357907'),
-(1, 2, '2025-04-29', 'present', NULL, '79db4c0b-7ae6-4173-af02-d0a63e357907'),
-
-(1, 3, '2025-04-09', 'late', 'Student arrived 5 minutes late', '79db4c0b-7ae6-4173-af02-d0a63e357907'),
-(1, 3, '2025-04-16', 'present', NULL, '79db4c0b-7ae6-4173-af02-d0a63e357907'),
-(1, 3, '2025-04-23', 'present', NULL, '79db4c0b-7ae6-4173-af02-d0a63e357907'),
-(1, 3, '2025-04-30', 'excused', 'Medical appointment', '79db4c0b-7ae6-4173-af02-d0a63e357907'),
-
-(1, 4, '2025-04-10', 'present', NULL, '79db4c0b-7ae6-4173-af02-d0a63e357907'),
-(1, 4, '2025-04-17', 'excused', 'Family emergency', '79db4c0b-7ae6-4173-af02-d0a63e357907'),
-(1, 4, '2025-04-24', 'present', NULL, '79db4c0b-7ae6-4173-af02-d0a63e357907'),
-(1, 4, '2025-05-01', 'present', NULL, '79db4c0b-7ae6-4173-af02-d0a63e357907');
-*/
+export type StallSchedule = typeof stallSchedule.$inferSelect;
+export type NewStallSchedule = typeof stallSchedule.$inferInsert;
 
 ```
 
@@ -353,7 +220,7 @@ INSERT INTO attendance (student_id, timetable_id, date, status, notes, recorded_
 ## File: packages/db/src/relations.ts
 ```
 import { relations } from "drizzle-orm";
-import { account, session, user } from "./schema";
+import { account, session, user, marketStall, product, category, stallSchedule } from "./schema";
 
 export const userRelations = relations(user, ({ many }) => ({
 	accounts: many(account),
@@ -366,6 +233,25 @@ export const accountRelations = relations(account, ({ one }) => ({
 
 export const SessionRelations = relations(session, ({ one }) => ({
 	user: one(user, { fields: [session.userId], references: [user.id] }),
+}));
+
+// Farmers Market Relations
+export const marketStallRelations = relations(marketStall, ({ many }) => ({
+	products: many(product),
+	schedules: many(stallSchedule)
+}));
+
+export const productRelations = relations(product, ({ one }) => ({
+	stall: one(marketStall, { fields: [product.stallId], references: [marketStall.id] }),
+	category: one(category, { fields: [product.categoryId], references: [category.id] })
+}));
+
+export const categoryRelations = relations(category, ({ many }) => ({
+	products: many(product)
+}));
+
+export const stallScheduleRelations = relations(stallSchedule, ({ one }) => ({
+	stall: one(marketStall, { fields: [stallSchedule.stallId], references: [marketStall.id] })
 }));
 ```
 
@@ -416,14 +302,14 @@ export const SessionRelations = relations(session, ({ one }) => ({
 ## File: packages/api/src/root.ts
 ```
 import { authRouter } from "./router/auth";
-import { testRouter } from "./router/test";
-import { attendanceRouter } from "./router/attendance";
+import { exampleRouter } from "./router/example";
+import { marketRouter } from "./router/market";
 import { createTRPCRouter } from "./trpc";
 
 export const appRouter = createTRPCRouter({
   auth: authRouter,
-  test: testRouter,
-  attendance: attendanceRouter,
+  example: exampleRouter,
+  market: marketRouter,
 });
 
 // export type definition of API
@@ -646,7 +532,6 @@ const styles = StyleSheet.create({
     "@trpc/client": "catalog:",
     "@trpc/server": "catalog:",
     "@trpc/tanstack-react-query": "catalog:",
-    "date-fns": "^4.1.0",
     "expo": "~52.0.46",
     "expo-blur": "~14.0.3",
     "expo-constants": "~17.0.8",

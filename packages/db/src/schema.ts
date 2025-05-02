@@ -1,6 +1,11 @@
 import { uniqueIndex, index, varchar, text, integer, timestamp } from "drizzle-orm/pg-core";
 import { createTable, fk, lower } from "./utils";
 
+// *****_____*****_____*****_____*****_____*****_____*****_____
+// DO NOT REMOVE OR RENAME, ONLY ADD TO THESE TABLES IF REQUIRED
+// NEXT AUTH IS DEPENDENT ON THESE HAVING THESE GIVEN COLUMNS
+// MAKE ALL EXTRA FIELDS OPTIONAL - OR HAVE DEFAULTS
+// *****_____*****_____*****_____*****_____*****_____*****_____
 export const user = createTable(
   "user",
   {
@@ -53,3 +58,4 @@ export const session = createTable("session", {
 
 export type Session = typeof session.$inferSelect;
 export type NewSession = typeof session.$inferInsert;
+// *****_____*****_____*****_____*****_____*****_____*****_____

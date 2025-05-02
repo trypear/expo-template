@@ -16,11 +16,12 @@ import {
 } from "drizzle-orm/pg-core";
 
 /**
- * Extracts the UUID portion after the table prefix
+ * Extracts the UUID portion after the last underscore
+ * If no underscore exists, returns the original string
  */
 function extractUuid(prefixedId: string): string {
-	const parts = prefixedId.split('_');
-	return parts.length > 1 ? parts.slice(1).join('_') : prefixedId;
+	const lastUnderscoreIndex = prefixedId.lastIndexOf('_');
+	return lastUnderscoreIndex !== -1 ? prefixedId.substring(lastUnderscoreIndex + 1) : prefixedId;
 }
 
 /**
@@ -50,9 +51,9 @@ export function createPrefixedUuid<TIdName extends string>(nameFn: () => TIdName
  * Creates a primary key column with auto-generated UUID and table name prefix
  */
 export function pk<TableName extends string>(tableNameFn: () => TableName) {
-	type IdName = `${TableName}Id`;
+	type IdName = `${TableName}_id`;
 	// Setting the prefix to be the table name Id
-	return createPrefixedUuid<IdName>(() => `${tableNameFn()}Id`)()
+	return createPrefixedUuid<IdName>(() => `${tableNameFn()}_id`)()
 		.primaryKey()
 		.notNull()
 		.default(sql`gen_random_uuid()`);
@@ -79,7 +80,7 @@ export function fk<
 	}
 ) {
 
-	type TIdName = `${ExtractTableName<T>}Id`
+	type TIdName = `${ExtractTableName<T>}_id`
 	// Simple function that prefixes the column name (avoids circiular references with the table)
 	const getColumnName = () => columnName as TIdName;
 

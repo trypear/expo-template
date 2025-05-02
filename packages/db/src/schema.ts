@@ -25,7 +25,7 @@ export type NewUser = typeof user.$inferInsert;
 export const account = createTable(
   "account",
   {
-    userId: fk("userId", () => user, { onDelete: "cascade" }),
+    userId: fk("user_id", () => user, { onDelete: "cascade" }),
     type: varchar({ length: 255 })
       .$type<"email" | "oauth" | "oidc" | "webauthn">()
       .notNull(),
@@ -49,7 +49,7 @@ export type NewAccount = typeof account.$inferInsert;
 
 export const session = createTable("session", {
   sessionToken: varchar({ length: 255 }).notNull(),
-  userId: fk("userId", () => user, { onDelete: "cascade" }),
+  userId: fk("user_id", () => user, { onDelete: "cascade" }),
   expires: timestamp({ mode: "date", withTimezone: true }).notNull(),
 },
   (t) => [

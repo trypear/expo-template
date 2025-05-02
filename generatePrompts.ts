@@ -58,8 +58,8 @@ As this throws errors when you might be comparing IDs that will never match.
 
 When you get a request from the user, follow these steps:
 - Plan out what you need to do, with requirements
-- Start by editing the database schema, adding in all of the tables (CALL new_task AND USE THE database-nerd MODE )
-- Add TRPC endpoints
+- Start by editing the database schema, adding in all of the tables (CALL new_task AND USE dave-the-database-nerd MODE )
+- Add TRPC endpoints (CALL new_task AND USE timothy-the-trpc-expert MODE)
 - Edit the mobile app, calling TRPC endpoints
 - Make sure you follow my instructions on adding trpc endpoints
 - Make sure you you invalidate the right queries
@@ -75,7 +75,8 @@ import { assert } from "@acme/utils";
 
 assert(!!value, "value should be defined")
 
-WHENEVER YOU ARE DOING A DATABASE OPERATION, CALL THE database-nerd TO DO IT IN A new_task!
+WHENEVER YOU ARE DOING A DATABASE OPERATION, CALL dave-the-database-nerd TO DO IT IN A new_task!
+CALL timothy-the-trpc-expert FOR ALL packages/api ROUTER TRPC SETUP AND CONFIG.
 `;
 
 // Define the file paths to include in the prompt

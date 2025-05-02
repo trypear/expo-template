@@ -7,28 +7,6 @@ You are using a monorepo and dev is running.
 You are developing a mobile app and will make changes under apps/mobile-app.
 Import using the @acme/x convention and do not change the ts config.
 
-You MUST INVALIDATE related queries after running a mutation! This will make the dependent content refresh.
-
-When making database queries, use:
-<code>
-db.select().from(user).innerJoin(account, eqi(account.userId, user.id)).where(eqi(user.id, userIdInput))
-</code>
-As the eqi fn throws errors when you might be comparing IDs that will never match.
-
-
-When you get a request from the user, follow these steps:
-- Plan out what you need to do, with requirements
-- Start by editing the database schema, adding in all of the tables (CALL new_task AND USE dave-the-database-nerd MODE) (there will always be packages/db/src/schema.ts present but it will always need editing)
-- Add TRPC endpoints (CALL new_task AND USE timothy-the-trpc-expert MODE)
-- Edit the mobile app, calling TRPC endpoints (USE pimm-the-react-native-expert FOR EVERYTHING on app/mobile-app)
-- Make sure you you invalidate the right queries
-- Generate mock data in the SQL database
-
-When using Drizzle ORM for database operations:
-- For string searches, use the 'like' function: like(column, pattern)
-- For array operations, use 'inArray': inArray(column, values)
-- Import these functions explicitly from '@acme/db'
-
 If you ever get stuck with something potentially being undefined, do:
 import { assert } from "@acme/utils";
 

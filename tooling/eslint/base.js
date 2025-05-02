@@ -77,6 +77,7 @@ export default tseslint.config(
       "@typescript-eslint/no-duplicate-type-constituents": "off",
       "@typescript-eslint/prefer-optional-chain": "off",
       "@typescript-eslint/no-unnecessary-condition": "off",
+      "t@typescript-eslint/prefer-nullish-coalescing": "off"
     },
   },
   {

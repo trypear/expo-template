@@ -16,7 +16,7 @@ export const user = createTable(
     email: varchar({ length: 255 }).notNull(),
     emailVerified: timestamp({ mode: "date", withTimezone: true }),
     image: varchar({ length: 255 }),
-    userRole: userRoleEnum('student').notNull(),
+    userRole: userRoleEnum('student').notNull().default("student"),
   },
   (t) => [
     uniqueIndex("user_email_idx").on(lower(t.email))

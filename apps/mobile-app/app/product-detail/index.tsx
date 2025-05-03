@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -10,6 +11,9 @@ import {
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
+import { Colors } from "@/constants/Colors";
+import { trpc } from "@/hooks/api";
+import { useColorScheme } from "@/hooks/useColorScheme";
 import { formatCurrency } from "@/utils/formatCurrency";
 
 /**
@@ -21,52 +25,62 @@ import { formatCurrency } from "@/utils/formatCurrency";
 export default function ProductDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const colorScheme = useColorScheme();
 
-  // In a real app, we would fetch the product data using the id
-  // For now, we'll use mock data
-  const [mockProduct, setMockProduct] = useState({
-    id: id || "1",
-    name: "Product Name",
-    description:
-      "This is a detailed description of the product. It includes information about the product's features, benefits, and specifications.",
-    price: 1999,
-    category: { id: "1", name: "Category 1" },
-    isActive: true,
-    createdAt: new Date(2025, 3, 15),
-  });
+  // Fetch product data using tRPC
+  const {
+    data: productData,
+    isLoading,
+    error,
+  } = trpc.product.getProductById.useQuery(
+    { id: id as string },
+    { enabled: !!id },
+  );
+
+  // Fetch categories for dropdown
+  const { data: categoriesData } = trpc.product.getCategories.useQuery();
+  const categories = categoriesData || [];
 
   // State for edit form
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    name: mockProduct.name,
-    price: mockProduct.price.toString(),
-    categoryId: mockProduct.category.id,
-    isActive: mockProduct.isActive,
+    name: "",
+    price: "",
+    categoryId: "",
+    isActive: true,
   });
 
-  // Mock categories for dropdown
-  const categories = [
-    { id: "1", name: "Category 1" },
-    { id: "2", name: "Category 2" },
-    { id: "3", name: "Category 3" },
-  ];
+  // Update mutation
+  const updateProductMutation = trpc.product.updateProduct.useMutation({
+    onSuccess: () => {
+      // Invalidate queries to refresh data
+      void trpc.product.getProductById.invalidate({ id: id as string });
+      void trpc.product.getProducts.invalidate();
+    },
+  });
+
+  // Initialize form data when product data is loaded
+  React.useEffect(() => {
+    if (productData?.product) {
+      setFormData({
+        name: productData.product.name,
+        price: productData.product.price.toString(),
+        categoryId: productData.product.categoryId || "",
+        isActive: productData.product.isActive,
+      });
+    }
+  }, [productData]);
 
   const handleSave = () => {
-    // In a real app, we would call a mutation to update the product
-    console.log("Saving product with data:", formData);
-
-    // Update the mock product with the new data
-    setMockProduct({
-      ...mockProduct,
-      name: formData.name,
-      price: parseInt(formData.price, 10),
-      category: {
-        id: formData.categoryId,
-        name:
-          categories.find((c) => c.id === formData.categoryId)?.name ||
-          mockProduct.category.name,
+    // Call the mutation to update the product
+    updateProductMutation.mutate({
+      id: id as string,
+      data: {
+        name: formData.name,
+        price: parseInt(formData.price, 10),
+        categoryId: formData.categoryId,
+        isActive: formData.isActive,
       },
-      isActive: formData.isActive,
     });
 
     // Close the edit form
@@ -83,164 +97,232 @@ export default function ProductDetailScreen() {
       />
 
       <ScrollView style={styles.container}>
-        <ThemedView style={styles.section}>
-          <ThemedText type="title">{mockProduct.name}</ThemedText>
-
-          <View style={styles.priceContainer}>
-            <ThemedText style={styles.price}>
-              {formatCurrency(mockProduct.price / 100)}
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator
+              size="large"
+              color={Colors[colorScheme ?? "light"].tint}
+            />
+            <ThemedText style={styles.loadingText}>
+              Loading product details...
             </ThemedText>
-            {mockProduct.isActive ? (
-              <View style={[styles.badge, styles.activeBadge]}>
-                <ThemedText style={styles.badgeText}>Active</ThemedText>
-              </View>
-            ) : (
-              <View style={[styles.badge, styles.inactiveBadge]}>
-                <ThemedText style={styles.badgeText}>Inactive</ThemedText>
-              </View>
-            )}
           </View>
+        ) : error ? (
+          <View style={styles.errorContainer}>
+            <ThemedText style={styles.errorText}>
+              Error loading product: {error.message}
+            </ThemedText>
+            <Pressable style={styles.button} onPress={() => router.back()}>
+              <ThemedText style={styles.buttonText}>Go Back</ThemedText>
+            </Pressable>
+          </View>
+        ) : productData?.product ? (
+          <ThemedView style={styles.section}>
+            <ThemedText type="title">{productData.product.name}</ThemedText>
 
-          <View style={styles.content}>
-            <View style={styles.infoRow}>
-              <ThemedText style={styles.label}>Category:</ThemedText>
-              <ThemedText>{mockProduct.category.name}</ThemedText>
+            <View style={styles.priceContainer}>
+              <ThemedText style={styles.price}>
+                {formatCurrency(productData.product.price / 100)}
+              </ThemedText>
+              {productData.product.isActive ? (
+                <View style={[styles.badge, styles.activeBadge]}>
+                  <ThemedText style={styles.badgeText}>Active</ThemedText>
+                </View>
+              ) : (
+                <View style={[styles.badge, styles.inactiveBadge]}>
+                  <ThemedText style={styles.badgeText}>Inactive</ThemedText>
+                </View>
+              )}
             </View>
 
-            <View style={styles.infoRow}>
-              <ThemedText style={styles.label}>Created:</ThemedText>
-              <ThemedText>
-                {mockProduct.createdAt.toLocaleDateString()}
+            <View style={styles.content}>
+              <View style={styles.infoRow}>
+                <ThemedText style={styles.label}>Category:</ThemedText>
+                <ThemedText>
+                  {productData.category?.name || "Uncategorized"}
+                </ThemedText>
+              </View>
+
+              <View style={styles.infoRow}>
+                <ThemedText style={styles.label}>Created:</ThemedText>
+                <ThemedText>
+                  {productData.product.createdAt
+                    ? new Date(
+                        productData.product.createdAt,
+                      ).toLocaleDateString()
+                    : "N/A"}
+                </ThemedText>
+              </View>
+
+              <ThemedText style={styles.sectionTitle}>Description</ThemedText>
+              <ThemedText style={styles.description}>
+                {productData.product.description || "No description available."}
               </ThemedText>
             </View>
 
-            <ThemedText style={styles.sectionTitle}>Description</ThemedText>
-            <ThemedText style={styles.description}>
-              {mockProduct.description}
-            </ThemedText>
-          </View>
-
-          {!isEditing ? (
-            <View style={styles.buttonContainer}>
-              <Pressable
-                style={[styles.button, styles.editButton]}
-                onPress={() => setIsEditing(true)}
-              >
-                <ThemedText style={styles.buttonText}>Edit Product</ThemedText>
-              </Pressable>
-
-              <Pressable style={styles.button} onPress={() => router.back()}>
-                <ThemedText style={styles.buttonText}>Go Back</ThemedText>
-              </Pressable>
-            </View>
-          ) : (
-            <View style={styles.formContainer}>
-              <ThemedText style={styles.sectionTitle}>Edit Product</ThemedText>
-
-              <View style={styles.formGroup}>
-                <ThemedText style={styles.formLabel}>Name</ThemedText>
-                <TextInput
-                  style={styles.textInput}
-                  value={formData.name}
-                  onChangeText={(text) =>
-                    setFormData({ ...formData, name: text })
-                  }
-                  placeholder="Product name"
-                  placeholderTextColor="rgba(255, 255, 255, 0.5)"
-                />
-              </View>
-
-              <View style={styles.formGroup}>
-                <ThemedText style={styles.formLabel}>
-                  Price (in cents)
-                </ThemedText>
-                <TextInput
-                  style={styles.textInput}
-                  value={formData.price}
-                  onChangeText={(text) =>
-                    setFormData({ ...formData, price: text })
-                  }
-                  keyboardType="numeric"
-                  placeholder="Price in cents"
-                  placeholderTextColor="rgba(255, 255, 255, 0.5)"
-                />
-              </View>
-
-              <View style={styles.formGroup}>
-                <ThemedText style={styles.formLabel}>Category</ThemedText>
-                <View style={styles.pickerContainer}>
-                  {categories.map((category) => (
-                    <Pressable
-                      key={category.id}
-                      style={[
-                        styles.categoryOption,
-                        formData.categoryId === category.id &&
-                          styles.categoryOptionSelected,
-                      ]}
-                      onPress={() =>
-                        setFormData({ ...formData, categoryId: category.id })
-                      }
-                    >
-                      <ThemedText style={styles.categoryOptionText}>
-                        {category.name}
-                      </ThemedText>
-                    </Pressable>
-                  ))}
-                </View>
-              </View>
-
-              <View style={styles.formGroup}>
-                <ThemedText style={styles.formLabel}>Active Status</ThemedText>
-                <View style={styles.switchContainer}>
-                  <Switch
-                    value={formData.isActive}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, isActive: value })
-                    }
-                    trackColor={{ false: "#767577", true: "#4CAF50" }}
-                    thumbColor={formData.isActive ? "#f4f3f4" : "#f4f3f4"}
-                  />
-                  <ThemedText style={styles.switchLabel}>
-                    {formData.isActive ? "Active" : "Inactive"}
-                  </ThemedText>
-                </View>
-              </View>
-
-              <View style={styles.formButtonContainer}>
+            {!isEditing ? (
+              <View style={styles.buttonContainer}>
                 <Pressable
-                  style={[styles.button, styles.saveButton]}
-                  onPress={handleSave}
+                  style={[styles.button, styles.editButton]}
+                  onPress={() => setIsEditing(true)}
                 >
                   <ThemedText style={styles.buttonText}>
-                    Save Changes
+                    Edit Product
                   </ThemedText>
                 </Pressable>
 
-                <Pressable
-                  style={[styles.button, styles.cancelButton]}
-                  onPress={() => {
-                    // Reset form data and close edit form
-                    setFormData({
-                      name: mockProduct.name,
-                      price: mockProduct.price.toString(),
-                      categoryId: mockProduct.category.id,
-                      isActive: mockProduct.isActive,
-                    });
-                    setIsEditing(false);
-                  }}
-                >
-                  <ThemedText style={styles.buttonText}>Cancel</ThemedText>
+                <Pressable style={styles.button} onPress={() => router.back()}>
+                  <ThemedText style={styles.buttonText}>Go Back</ThemedText>
                 </Pressable>
               </View>
-            </View>
-          )}
-        </ThemedView>
+            ) : (
+              <View style={styles.formContainer}>
+                <ThemedText style={styles.sectionTitle}>
+                  Edit Product
+                </ThemedText>
+
+                <View style={styles.formGroup}>
+                  <ThemedText style={styles.formLabel}>Name</ThemedText>
+                  <TextInput
+                    style={styles.textInput}
+                    value={formData.name}
+                    onChangeText={(text) =>
+                      setFormData({ ...formData, name: text })
+                    }
+                    placeholder="Product name"
+                    placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                  />
+                </View>
+
+                <View style={styles.formGroup}>
+                  <ThemedText style={styles.formLabel}>
+                    Price (in cents)
+                  </ThemedText>
+                  <TextInput
+                    style={styles.textInput}
+                    value={formData.price}
+                    onChangeText={(text) =>
+                      setFormData({ ...formData, price: text })
+                    }
+                    keyboardType="numeric"
+                    placeholder="Price in cents"
+                    placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                  />
+                </View>
+
+                <View style={styles.formGroup}>
+                  <ThemedText style={styles.formLabel}>Category</ThemedText>
+                  <View style={styles.pickerContainer}>
+                    {categories.map((category) => (
+                      <Pressable
+                        key={category.id}
+                        style={[
+                          styles.categoryOption,
+                          formData.categoryId === category.id &&
+                            styles.categoryOptionSelected,
+                        ]}
+                        onPress={() =>
+                          setFormData({ ...formData, categoryId: category.id })
+                        }
+                      >
+                        <ThemedText style={styles.categoryOptionText}>
+                          {category.name}
+                        </ThemedText>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
+
+                <View style={styles.formGroup}>
+                  <ThemedText style={styles.formLabel}>
+                    Active Status
+                  </ThemedText>
+                  <View style={styles.switchContainer}>
+                    <Switch
+                      value={formData.isActive}
+                      onValueChange={(value) =>
+                        setFormData({ ...formData, isActive: value })
+                      }
+                      trackColor={{ false: "#767577", true: "#4CAF50" }}
+                      thumbColor={formData.isActive ? "#f4f3f4" : "#f4f3f4"}
+                    />
+                    <ThemedText style={styles.switchLabel}>
+                      {formData.isActive ? "Active" : "Inactive"}
+                    </ThemedText>
+                  </View>
+                </View>
+
+                <View style={styles.formButtonContainer}>
+                  <Pressable
+                    style={[styles.button, styles.saveButton]}
+                    onPress={handleSave}
+                  >
+                    <ThemedText style={styles.buttonText}>
+                      {updateProductMutation.isPending
+                        ? "Saving..."
+                        : "Save Changes"}
+                    </ThemedText>
+                  </Pressable>
+
+                  <Pressable
+                    style={[styles.button, styles.cancelButton]}
+                    onPress={() => {
+                      // Reset form data and close edit form
+                      if (productData?.product) {
+                        setFormData({
+                          name: productData.product.name,
+                          price: productData.product.price.toString(),
+                          categoryId: productData.product.categoryId || "",
+                          isActive: productData.product.isActive,
+                        });
+                      }
+                      setIsEditing(false);
+                    }}
+                  >
+                    <ThemedText style={styles.buttonText}>Cancel</ThemedText>
+                  </Pressable>
+                </View>
+              </View>
+            )}
+          </ThemedView>
+        ) : (
+          <View style={styles.errorContainer}>
+            <ThemedText style={styles.errorText}>Product not found</ThemedText>
+            <Pressable style={styles.button} onPress={() => router.back()}>
+              <ThemedText style={styles.buttonText}>Go Back</ThemedText>
+            </Pressable>
+          </View>
+        )}
       </ScrollView>
     </>
   );
 }
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+    minHeight: 300,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+    minHeight: 300,
+  },
+  errorText: {
+    marginBottom: 16,
+    fontSize: 16,
+    color: "#F44336",
+    textAlign: "center",
+  },
   container: {
     flex: 1,
     padding: 16,

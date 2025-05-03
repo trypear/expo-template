@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -9,6 +10,9 @@ import {
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
+import { Colors } from "@/constants/Colors";
+import { trpc } from "@/hooks/api";
+import { useColorScheme } from "@/hooks/useColorScheme";
 import { formatCurrency } from "@/utils/formatCurrency";
 
 /**
@@ -20,35 +24,34 @@ import { formatCurrency } from "@/utils/formatCurrency";
 export default function InventoryDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const colorScheme = useColorScheme();
 
-  // In a real app, we would fetch the inventory data using the id
-  // For now, we'll use mock data
-  const [mockInventory, setMockInventory] = useState({
-    id: id || "1",
-    product: {
-      id: "1",
-      name: "Product Name",
-      price: 1999,
-      category: { id: "1", name: "Category 1" },
-    },
-    quantity: 25,
-    locationCode: "main",
-    lastRestockDate: new Date(2025, 4, 1),
-    restockHistory: [
-      { date: new Date(2025, 4, 1), quantity: 10 },
-      { date: new Date(2025, 3, 15), quantity: 15 },
-      { date: new Date(2025, 3, 1), quantity: 20 },
-    ],
-    minimumStockLevel: 10,
-    maximumStockLevel: 50,
-  });
+  // Fetch inventory data using tRPC
+  const {
+    data: inventoryData,
+    isLoading,
+    error,
+  } = useQuery(
+    trpc.inventory.getInventoryById.queryOptions(
+      { id: id as string },
+      { enabled: !!id },
+    ),
+  );
 
   // State for restock form
   const [isRestocking, setIsRestocking] = useState(false);
   const [restockQuantity, setRestockQuantity] = useState("10");
 
+  // Restock mutation
+  const restockMutation = trpc.inventory.restockInventory.useMutation({
+    onSuccess: () => {
+      // Invalidate queries to refresh data
+      void trpc.inventory.getInventoryById.invalidate({ id: id as string });
+      void trpc.inventory.getInventory.invalidate();
+    },
+  });
+
   const handleRestock = () => {
-    // In a real app, we would call a mutation to update the inventory
     const quantity = parseInt(restockQuantity, 10);
 
     if (isNaN(quantity) || quantity <= 0) {
@@ -56,20 +59,10 @@ export default function InventoryDetailScreen() {
       return;
     }
 
-    console.log("Restocking inventory with quantity:", quantity);
-
-    // Create a new restock entry
-    const newRestockEntry = {
-      date: new Date(),
+    // Call the mutation to restock inventory
+    restockMutation.mutate({
+      id: id as string,
       quantity: quantity,
-    };
-
-    // Update the mock inventory with the new data
-    setMockInventory({
-      ...mockInventory,
-      quantity: mockInventory.quantity + quantity,
-      lastRestockDate: new Date(),
-      restockHistory: [newRestockEntry, ...mockInventory.restockHistory],
     });
 
     // Close the restock form
@@ -111,167 +104,248 @@ export default function InventoryDetailScreen() {
       />
 
       <ScrollView style={styles.container}>
-        <ThemedView style={styles.section}>
-          <ThemedText type="title">{mockInventory.product.name}</ThemedText>
-
-          <View style={styles.stockContainer}>
-            <View
-              style={[
-                styles.stockBadge,
-                { backgroundColor: getStockLevelColor(mockInventory.quantity) },
-              ]}
-            >
-              <ThemedText style={styles.stockText}>
-                {getStockLevelText(mockInventory.quantity)}
-              </ThemedText>
-            </View>
-            <ThemedText style={styles.quantityText}>
-              {mockInventory.quantity} units
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator
+              size="large"
+              color={Colors[colorScheme ?? "light"].tint}
+            />
+            <ThemedText style={styles.loadingText}>
+              Loading inventory details...
             </ThemedText>
           </View>
-
-          <View style={styles.content}>
-            <View style={styles.infoRow}>
-              <ThemedText style={styles.label}>Category:</ThemedText>
-              <ThemedText>{mockInventory.product.category.name}</ThemedText>
-            </View>
-
-            <View style={styles.infoRow}>
-              <ThemedText style={styles.label}>Price:</ThemedText>
-              <ThemedText>
-                {formatCurrency(mockInventory.product.price / 100)}
-              </ThemedText>
-            </View>
-
-            <View style={styles.infoRow}>
-              <ThemedText style={styles.label}>Location:</ThemedText>
-              <ThemedText>{mockInventory.locationCode}</ThemedText>
-            </View>
-
-            <View style={styles.infoRow}>
-              <ThemedText style={styles.label}>Last Restock:</ThemedText>
-              <ThemedText>
-                {formatDate(mockInventory.lastRestockDate)}
-              </ThemedText>
-            </View>
-
-            <View style={styles.stockLevelsContainer}>
-              <ThemedText style={styles.sectionTitle}>Stock Levels</ThemedText>
-              <View style={styles.stockLevelBar}>
-                <View style={styles.stockLevelBarBackground}>
-                  <View
-                    style={[
-                      styles.stockLevelBarFill,
-                      {
-                        width: `${(mockInventory.quantity / mockInventory.maximumStockLevel) * 100}%`,
-                        backgroundColor: getStockLevelColor(
-                          mockInventory.quantity,
-                        ),
-                      },
-                    ]}
-                  />
-                </View>
-                <View style={styles.stockLevelLabels}>
-                  <ThemedText style={styles.stockLevelLabel}>
-                    Min: {mockInventory.minimumStockLevel}
-                  </ThemedText>
-                  <ThemedText style={styles.stockLevelLabel}>
-                    Max: {mockInventory.maximumStockLevel}
-                  </ThemedText>
-                </View>
-              </View>
-            </View>
-
-            <ThemedText style={styles.sectionTitle}>Restock History</ThemedText>
-            {mockInventory.restockHistory.map((restock, index) => (
-              <View key={index} style={styles.restockItem}>
-                <ThemedText>{formatDate(restock.date)}</ThemedText>
-                <ThemedText style={styles.restockQuantity}>
-                  +{restock.quantity} units
-                </ThemedText>
-              </View>
-            ))}
+        ) : error ? (
+          <View style={styles.errorContainer}>
+            <ThemedText style={styles.errorText}>
+              Error loading inventory: {error.message}
+            </ThemedText>
+            <Pressable style={styles.button} onPress={() => router.back()}>
+              <ThemedText style={styles.buttonText}>Go Back</ThemedText>
+            </Pressable>
           </View>
+        ) : inventoryData ? (
+          <ThemedView style={styles.section}>
+            <ThemedText type="title">{inventoryData.product.name}</ThemedText>
 
-          {!isRestocking ? (
-            <View style={styles.buttonContainer}>
-              <Pressable
-                style={[styles.button, styles.restockButton]}
-                onPress={() => setIsRestocking(true)}
+            <View style={styles.stockContainer}>
+              <View
+                style={[
+                  styles.stockBadge,
+                  {
+                    backgroundColor: getStockLevelColor(inventoryData.quantity),
+                  },
+                ]}
               >
-                <ThemedText style={styles.buttonText}>
-                  Restock Inventory
+                <ThemedText style={styles.stockText}>
+                  {getStockLevelText(inventoryData.quantity)}
                 </ThemedText>
-              </Pressable>
-
-              <Pressable style={styles.button} onPress={() => router.back()}>
-                <ThemedText style={styles.buttonText}>Go Back</ThemedText>
-              </Pressable>
-            </View>
-          ) : (
-            <View style={styles.formContainer}>
-              <ThemedText style={styles.sectionTitle}>
-                Restock Inventory
+              </View>
+              <ThemedText style={styles.quantityText}>
+                {inventoryData.quantity} units
               </ThemedText>
+            </View>
 
-              <View style={styles.formGroup}>
-                <ThemedText style={styles.formLabel}>
-                  Quantity to Add
-                </ThemedText>
-                <TextInput
-                  style={styles.textInput}
-                  value={restockQuantity}
-                  onChangeText={setRestockQuantity}
-                  keyboardType="numeric"
-                  placeholder="Enter quantity"
-                  placeholderTextColor="rgba(255, 255, 255, 0.5)"
-                />
-              </View>
-
-              <View style={styles.formInfo}>
-                <ThemedText style={styles.formInfoText}>
-                  Current quantity: {mockInventory.quantity} units
-                </ThemedText>
-                <ThemedText style={styles.formInfoText}>
-                  Maximum capacity: {mockInventory.maximumStockLevel} units
-                </ThemedText>
-                <ThemedText style={styles.formInfoText}>
-                  Available space:{" "}
-                  {mockInventory.maximumStockLevel - mockInventory.quantity}{" "}
-                  units
+            <View style={styles.content}>
+              <View style={styles.infoRow}>
+                <ThemedText style={styles.label}>Category:</ThemedText>
+                <ThemedText>
+                  {inventoryData.product.category?.name || "Uncategorized"}
                 </ThemedText>
               </View>
 
-              <View style={styles.formButtonContainer}>
+              <View style={styles.infoRow}>
+                <ThemedText style={styles.label}>Price:</ThemedText>
+                <ThemedText>
+                  {formatCurrency(inventoryData.product.price / 100)}
+                </ThemedText>
+              </View>
+
+              <View style={styles.infoRow}>
+                <ThemedText style={styles.label}>Location:</ThemedText>
+                <ThemedText>{inventoryData.locationCode}</ThemedText>
+              </View>
+
+              <View style={styles.infoRow}>
+                <ThemedText style={styles.label}>Last Restock:</ThemedText>
+                <ThemedText>
+                  {inventoryData.lastRestockDate
+                    ? formatDate(new Date(inventoryData.lastRestockDate))
+                    : "Never"}
+                </ThemedText>
+              </View>
+
+              <View style={styles.stockLevelsContainer}>
+                <ThemedText style={styles.sectionTitle}>
+                  Stock Levels
+                </ThemedText>
+                <View style={styles.stockLevelBar}>
+                  <View style={styles.stockLevelBarBackground}>
+                    <View
+                      style={[
+                        styles.stockLevelBarFill,
+                        {
+                          width: `${(inventoryData.quantity / inventoryData.maximumStockLevel) * 100}%`,
+                          backgroundColor: getStockLevelColor(
+                            inventoryData.quantity,
+                          ),
+                        },
+                      ]}
+                    />
+                  </View>
+                  <View style={styles.stockLevelLabels}>
+                    <ThemedText style={styles.stockLevelLabel}>
+                      Min: {inventoryData.minimumStockLevel}
+                    </ThemedText>
+                    <ThemedText style={styles.stockLevelLabel}>
+                      Max: {inventoryData.maximumStockLevel}
+                    </ThemedText>
+                  </View>
+                </View>
+              </View>
+
+              <ThemedText style={styles.sectionTitle}>
+                Restock History
+              </ThemedText>
+              {inventoryData.restockHistory &&
+              inventoryData.restockHistory.length > 0 ? (
+                inventoryData.restockHistory.map((restock, index) => (
+                  <View key={index} style={styles.restockItem}>
+                    <ThemedText>
+                      {formatDate(new Date(restock.date))}
+                    </ThemedText>
+                    <ThemedText style={styles.restockQuantity}>
+                      +{restock.quantity} units
+                    </ThemedText>
+                  </View>
+                ))
+              ) : (
+                <ThemedText style={styles.emptyText}>
+                  No restock history available
+                </ThemedText>
+              )}
+            </View>
+
+            {!isRestocking ? (
+              <View style={styles.buttonContainer}>
                 <Pressable
-                  style={[styles.button, styles.saveButton]}
-                  onPress={handleRestock}
+                  style={[styles.button, styles.restockButton]}
+                  onPress={() => setIsRestocking(true)}
                 >
                   <ThemedText style={styles.buttonText}>
-                    Confirm Restock
+                    Restock Inventory
                   </ThemedText>
                 </Pressable>
 
-                <Pressable
-                  style={[styles.button, styles.cancelButton]}
-                  onPress={() => {
-                    // Reset form data and close restock form
-                    setRestockQuantity("10");
-                    setIsRestocking(false);
-                  }}
-                >
-                  <ThemedText style={styles.buttonText}>Cancel</ThemedText>
+                <Pressable style={styles.button} onPress={() => router.back()}>
+                  <ThemedText style={styles.buttonText}>Go Back</ThemedText>
                 </Pressable>
               </View>
-            </View>
-          )}
-        </ThemedView>
+            ) : (
+              <View style={styles.formContainer}>
+                <ThemedText style={styles.sectionTitle}>
+                  Restock Inventory
+                </ThemedText>
+
+                <View style={styles.formGroup}>
+                  <ThemedText style={styles.formLabel}>
+                    Quantity to Add
+                  </ThemedText>
+                  <TextInput
+                    style={styles.textInput}
+                    value={restockQuantity}
+                    onChangeText={setRestockQuantity}
+                    keyboardType="numeric"
+                    placeholder="Enter quantity"
+                    placeholderTextColor="rgba(255, 255, 255, 0.5)"
+                  />
+                </View>
+
+                <View style={styles.formInfo}>
+                  <ThemedText style={styles.formInfoText}>
+                    Current quantity: {inventoryData.quantity} units
+                  </ThemedText>
+                  <ThemedText style={styles.formInfoText}>
+                    Maximum capacity: {inventoryData.maximumStockLevel} units
+                  </ThemedText>
+                  <ThemedText style={styles.formInfoText}>
+                    Available space:{" "}
+                    {inventoryData.maximumStockLevel - inventoryData.quantity}{" "}
+                    units
+                  </ThemedText>
+                </View>
+
+                <View style={styles.formButtonContainer}>
+                  <Pressable
+                    style={[styles.button, styles.saveButton]}
+                    onPress={handleRestock}
+                  >
+                    <ThemedText style={styles.buttonText}>
+                      {restockMutation.isPending
+                        ? "Processing..."
+                        : "Confirm Restock"}
+                    </ThemedText>
+                  </Pressable>
+
+                  <Pressable
+                    style={[styles.button, styles.cancelButton]}
+                    onPress={() => {
+                      // Reset form data and close restock form
+                      setRestockQuantity("10");
+                      setIsRestocking(false);
+                    }}
+                  >
+                    <ThemedText style={styles.buttonText}>Cancel</ThemedText>
+                  </Pressable>
+                </View>
+              </View>
+            )}
+          </ThemedView>
+        ) : (
+          <View style={styles.errorContainer}>
+            <ThemedText style={styles.errorText}>
+              Inventory item not found
+            </ThemedText>
+            <Pressable style={styles.button} onPress={() => router.back()}>
+              <ThemedText style={styles.buttonText}>Go Back</ThemedText>
+            </Pressable>
+          </View>
+        )}
       </ScrollView>
     </>
   );
 }
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+    minHeight: 300,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+    minHeight: 300,
+  },
+  errorText: {
+    marginBottom: 16,
+    fontSize: 16,
+    color: "#F44336",
+    textAlign: "center",
+  },
+  emptyText: {
+    fontStyle: "italic",
+    opacity: 0.7,
+    textAlign: "center",
+    padding: 10,
+  },
   container: {
     flex: 1,
     padding: 16,

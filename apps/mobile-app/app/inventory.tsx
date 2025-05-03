@@ -13,8 +13,10 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Icon } from "@/components/ui/Icons";
 import { Colors } from "@/constants/Colors";
+import { trpc } from "@/hooks/api";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { formatCurrency } from "@/utils/formatCurrency";
+import { useQuery } from "@tanstack/react-query";
 
 /**
  * Inventory Status Screen
@@ -30,115 +32,65 @@ export default function InventoryScreen() {
     "name",
   );
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-  const [isLoading] = useState(false);
   const [showLowStockOnly, setShowLowStockOnly] = useState(false);
 
-  // Mock inventory data
-  const mockInventory = [
-    {
-      id: "1",
-      product: {
-        id: "1",
-        name: "Product 1",
-        price: 1999,
-        category: { id: "1", name: "Category 1" },
-      },
-      quantity: 25,
-      locationCode: "main",
-      lastRestockDate: new Date(2025, 4, 1),
-    },
-    {
-      id: "2",
-      product: {
-        id: "2",
-        name: "Product 2",
-        price: 2599,
-        category: { id: "2", name: "Category 2" },
-      },
-      quantity: 8,
-      locationCode: "main",
-      lastRestockDate: new Date(2025, 4, 2),
-    },
-    {
-      id: "3",
-      product: {
-        id: "3",
-        name: "Product 3",
-        price: 999,
-        category: { id: "1", name: "Category 1" },
-      },
-      quantity: 3,
-      locationCode: "main",
-      lastRestockDate: new Date(2025, 4, 1),
-    },
-    {
-      id: "4",
-      product: {
-        id: "4",
-        name: "Product 4",
-        price: 4999,
-        category: { id: "3", name: "Category 3" },
-      },
-      quantity: 12,
-      locationCode: "main",
-      lastRestockDate: new Date(2025, 4, 3),
-    },
-    {
-      id: "5",
-      product: {
-        id: "5",
-        name: "Product 5",
-        price: 1499,
-        category: { id: "2", name: "Category 2" },
-      },
-      quantity: 0,
-      locationCode: "main",
-      lastRestockDate: new Date(2025, 3, 15),
-    },
-  ];
+  // Fetch inventory data using tRPC
+  const { data: inventoryData, isLoading } = useQuery(
+    trpc.inventory.getInventory.queryOptions({
+      searchTerm: searchQuery,
+      minQuantity: showLowStockOnly ? 0 : undefined,
+      maxQuantity: showLowStockOnly ? 10 : undefined,
+    }),
+  );
 
-  // Mock categories
-  const mockCategories = [
-    { id: "1", name: "Category 1" },
-    { id: "2", name: "Category 2" },
-    { id: "3", name: "Category 3" },
-  ];
+  // Fetch categories for filtering
+  const { data: categoriesData } = useQuery(
+    trpc.product.getCategories.queryOptions(),
+  );
+  const categories = categoriesData || [];
 
   // Filter and sort inventory
-  const filteredInventory = mockInventory
-    .filter((item) => {
-      // Filter by search query
-      const matchesSearch = item.product.name
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase());
+  const filteredInventory = React.useMemo(() => {
+    if (!inventoryData?.inventoryItems) return [];
 
-      // Filter by category
-      const matchesCategory = selectedCategory
-        ? item.product.category.id === selectedCategory
-        : true;
+    return inventoryData.inventoryItems
+      .filter((item) => {
+        // Filter by category
+        const matchesCategory = selectedCategory
+          ? item.product.categoryId === selectedCategory
+          : true;
 
-      // Filter by stock level
-      const matchesStockLevel = showLowStockOnly ? item.quantity <= 10 : true;
-
-      return matchesSearch && matchesCategory && matchesStockLevel;
-    })
-    .sort((a, b) => {
-      // Sort by selected field
-      if (sortBy === "name") {
-        return sortOrder === "asc"
-          ? a.product.name.localeCompare(b.product.name)
-          : b.product.name.localeCompare(a.product.name);
-      } else if (sortBy === "quantity") {
-        return sortOrder === "asc"
-          ? a.quantity - b.quantity
-          : b.quantity - a.quantity;
-      } else if (sortBy === "category") {
-        return sortOrder === "asc"
-          ? a.product.category.name.localeCompare(b.product.category.name)
-          : b.product.category.name.localeCompare(a.product.category.name);
-      }
-      return 0;
-    });
+        return matchesCategory;
+      })
+      .sort((a, b) => {
+        // Sort by selected field
+        if (sortBy === "name") {
+          return sortOrder === "asc"
+            ? a.product.name.localeCompare(b.product.name)
+            : b.product.name.localeCompare(a.product.name);
+        } else if (sortBy === "quantity") {
+          return sortOrder === "asc"
+            ? a.inventory.quantity - b.inventory.quantity
+            : b.inventory.quantity - a.inventory.quantity;
+        } else if (sortBy === "category") {
+          const categoryA =
+            categories.find((c) => c.id === a.product.categoryId)?.name || "";
+          const categoryB =
+            categories.find((c) => c.id === b.product.categoryId)?.name || "";
+          return sortOrder === "asc"
+            ? categoryA.localeCompare(categoryB)
+            : categoryB.localeCompare(categoryA);
+        }
+        return 0;
+      });
+  }, [
+    inventoryData,
+    selectedCategory,
+    sortBy,
+    sortOrder,
+    categories,
+    showLowStockOnly,
+  ]);
 
   // Format date for display
   const formatDate = (date: Date) => {
@@ -180,47 +132,56 @@ export default function InventoryScreen() {
   const renderInventoryItem = ({
     item,
   }: {
-    item: (typeof mockInventory)[0];
-  }) => (
-    <Pressable
-      style={styles.inventoryItem}
-      onPress={() => router.push(`/inventory-detail?id=${item.id}`)}
-    >
-      <View style={styles.itemHeader}>
-        <ThemedText style={styles.productName}>{item.product.name}</ThemedText>
-        <View
-          style={[
-            styles.stockBadge,
-            { backgroundColor: getStockLevelColor(item.quantity) },
-          ]}
-        >
-          <ThemedText style={styles.stockText}>
-            {getStockLevelText(item.quantity)}
-          </ThemedText>
-        </View>
-      </View>
+    item: (typeof filteredInventory)[0];
+  }) => {
+    const categoryName =
+      categories.find((c) => c.id === item.product.categoryId)?.name ||
+      "Uncategorized";
 
-      <View style={styles.itemDetails}>
-        <View>
-          <ThemedText style={styles.categoryName}>
-            {item.product.category.name}
+    return (
+      <Pressable
+        style={styles.inventoryItem}
+        onPress={() => router.push(`/inventory-detail?id=${item.inventory.id}`)}
+      >
+        <View style={styles.itemHeader}>
+          <ThemedText style={styles.productName}>
+            {item.product.name}
           </ThemedText>
-          <ThemedText style={styles.priceText}>
-            {formatCurrency(item.product.price / 100)}
-          </ThemedText>
+          <View
+            style={[
+              styles.stockBadge,
+              { backgroundColor: getStockLevelColor(item.inventory.quantity) },
+            ]}
+          >
+            <ThemedText style={styles.stockText}>
+              {getStockLevelText(item.inventory.quantity)}
+            </ThemedText>
+          </View>
         </View>
 
-        <View style={styles.quantityInfo}>
-          <ThemedText style={styles.quantityText}>
-            {item.quantity} units
-          </ThemedText>
-          <ThemedText style={styles.restockDate}>
-            Last restock: {formatDate(item.lastRestockDate)}
-          </ThemedText>
+        <View style={styles.itemDetails}>
+          <View>
+            <ThemedText style={styles.categoryName}>{categoryName}</ThemedText>
+            <ThemedText style={styles.priceText}>
+              {formatCurrency(item.product.price / 100)}
+            </ThemedText>
+          </View>
+
+          <View style={styles.quantityInfo}>
+            <ThemedText style={styles.quantityText}>
+              {item.inventory.quantity} units
+            </ThemedText>
+            <ThemedText style={styles.restockDate}>
+              Last restock:{" "}
+              {item.inventory.lastRestockDate
+                ? formatDate(new Date(item.inventory.lastRestockDate))
+                : "Never"}
+            </ThemedText>
+          </View>
         </View>
-      </View>
-    </Pressable>
-  );
+      </Pressable>
+    );
+  };
 
   return (
     <>
@@ -285,7 +246,7 @@ export default function InventoryScreen() {
                 All
               </ThemedText>
             </Pressable>
-            {mockCategories.map((category) => (
+            {categories.map((category) => (
               <Pressable
                 key={category.id}
                 style={[
@@ -376,11 +337,13 @@ export default function InventoryScreen() {
           <FlatList
             data={filteredInventory}
             renderItem={renderInventoryItem}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item) => item.inventory.id}
             contentContainerStyle={styles.inventoryList}
             ListEmptyComponent={
               <ThemedText style={styles.emptyText}>
-                No inventory items found
+                {isLoading
+                  ? "Loading inventory..."
+                  : "No inventory items found"}
               </ThemedText>
             }
           />

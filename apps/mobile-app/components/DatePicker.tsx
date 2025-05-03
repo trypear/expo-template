@@ -26,7 +26,7 @@ interface DatePickerProps {
  * DatePicker component that uses the native datetimepicker on iOS/Android
  * and switches to a web-compatible alternative on web platforms
  */
-export default function DatePicker({
+export const DatePicker = ({
   value,
   onChange,
   mode = "date",
@@ -34,7 +34,7 @@ export default function DatePicker({
   minimumDate,
   maximumDate,
   className,
-}: DatePickerProps) {
+}: DatePickerProps) => {
   const [show, setShow] = useState(false);
 
   // Format date for display
@@ -138,4 +138,4 @@ export default function DatePicker({
       )}
     </View>
   );
-}
+};

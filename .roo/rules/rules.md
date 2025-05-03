@@ -1,4 +1,3 @@
-
 You are using a monorepo and dev is running.
 You are developing a mobile app and will make changes under apps/mobile-app.
 Import using the @acme/x convention and do not change the ts config.
@@ -11,8 +10,8 @@ db.select().from(user).innerJoin(account, eqi(account.userId, user.id)).where(eq
 </code>
 As the eqi fn throws errors when you might be comparing IDs that will never match.
 
-
 When you get a request from the user, follow these steps:
+
 - Plan out what you need to do, with requirements
 - Start by editing the database schema, adding in all of the tables (CALL new_task AND USE dave-the-database-nerd MODE) (there will always be packages/db/src/schema.ts present but it will always need editing)
 - Add TRPC endpoints (CALL new_task AND USE timothy-the-trpc-expert MODE)
@@ -21,6 +20,7 @@ When you get a request from the user, follow these steps:
 - Generate mock data in the SQL database
 
 When using Drizzle ORM for database operations:
+
 - For string searches, use the 'like' function: like(column, pattern)
 - For array operations, use 'inArray': inArray(column, values)
 - Import these functions explicitly from '@acme/db'
@@ -32,7 +32,9 @@ assert(!!value, "value should be defined")
 
 FOLLOW THE STEPS AND CALL new_task WITh THE EXPERT NAMES.
 If you ever gets stuck, tell me where you are getting stuck, don't keep trying over and over again
+
 ## File: packages/db/src/schema.ts
+
 ```
 import { uniqueIndex, index, varchar, text, integer, timestamp, boolean, time } from "drizzle-orm/pg-core";
 import { createTable, fk, lower } from "./utils";
@@ -159,6 +161,7 @@ export type NewStallSchedule = typeof stallSchedule.$inferInsert;
 ```
 
 ## File: packages/db/package.json
+
 ```
 {
   "name": "@acme/db",
@@ -218,6 +221,7 @@ export type NewStallSchedule = typeof stallSchedule.$inferInsert;
 ```
 
 ## File: packages/db/src/relations.ts
+
 ```
 import { relations } from "drizzle-orm";
 import { account, session, user, marketStall, product, category, stallSchedule } from "./schema";
@@ -256,6 +260,7 @@ export const stallScheduleRelations = relations(stallSchedule, ({ one }) => ({
 ```
 
 ## File: packages/api/package.json
+
 ```
 {
   "name": "@acme/api",
@@ -300,6 +305,7 @@ export const stallScheduleRelations = relations(stallSchedule, ({ one }) => ({
 ```
 
 ## File: packages/api/src/root.ts
+
 ```
 import { authRouter } from "./router/auth";
 import { exampleRouter } from "./router/example";
@@ -318,6 +324,7 @@ export type AppRouter = typeof appRouter;
 ```
 
 ## File: packages/api/src/router/test.ts
+
 ```
 import type { TRPCRouterRecord } from "@trpc/server";
 import { publicProcedure } from "../trpc";
@@ -334,6 +341,7 @@ export const testRouter = {
 ```
 
 ## File: packages/api/src/router/auth.ts
+
 ```
 import type { TRPCRouterRecord } from "@trpc/server";
 
@@ -360,6 +368,7 @@ export const authRouter = {
 ```
 
 ## File: packages/utils/src/index.ts
+
 ```
 export const name = "utils";
 
@@ -407,7 +416,8 @@ export const getFirstEl = <T extends object>(x: T[] | null | undefined) => {
 };
 ```
 
-## File: apps/mobile-app/app/_layout.tsx
+## File: apps/mobile-app/app/\_layout.tsx
+
 ```
 /* eslint-disable @typescript-eslint/no-floating-promises */
 /* eslint-disable @typescript-eslint/no-require-imports */
@@ -504,6 +514,7 @@ const styles = StyleSheet.create({
 ```
 
 ## File: apps/mobile-app/package.json
+
 ```
 {
   "name": "@acme/mobile-app",
@@ -585,4 +596,3 @@ const styles = StyleSheet.create({
 }
 
 ```
-

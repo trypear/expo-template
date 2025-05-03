@@ -85,7 +85,6 @@ export function fk<
 	const getColumnName = () => columnName as TIdName;
 
 	return createPrefixedUuid<TIdName>(getColumnName)(columnName)
-		.notNull()
 		.references(() => (options?.column ? options.column() : referencedTableFn().id), {
 			onDelete: options?.onDelete,
 			onUpdate: options?.onUpdate

@@ -1,6 +1,6 @@
 {
-  "id": "a507e5f3-9bdc-4695-a045-d8f66f5dc1c7",
-  "prevId": "5c1ebbe4-c301-45aa-af16-26cd59042ff9",
+  "id": "5181758b-cc1d-44cf-988a-bec81f6aaf6a",
+  "prevId": "bf017152-b821-4421-9811-312bb12f8dff",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -249,7 +249,7 @@
           "name": "user_id",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         }
       },
       "indexes": {
@@ -469,7 +469,7 @@
           "name": "category_id",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "is_active": {
           "name": "is_active",
@@ -561,7 +561,7 @@
           "name": "customer_id",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "sale_date": {
           "name": "sale_date",

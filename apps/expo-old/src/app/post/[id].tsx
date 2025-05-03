@@ -5,8 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { trpc } from "~/utils/api";
 
 export default function Post() {
-
-  return (<Text>hi</Text>)
+  return <Text>hi</Text>;
   const { id } = useGlobalSearchParams();
   if (!id || typeof id !== "string") throw new Error("unreachable");
   const { data } = useQuery(trpc.post.byId.queryOptions({ id }));

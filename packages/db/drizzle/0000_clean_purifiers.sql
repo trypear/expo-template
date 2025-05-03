@@ -31,7 +31,7 @@ CREATE TABLE "customer" (
 	"email" varchar(255),
 	"phone" varchar(50),
 	"address" text,
-	"user_id" uuid NOT NULL
+	"user_id" uuid
 );
 --> statement-breakpoint
 CREATE TABLE "inventory" (
@@ -52,7 +52,7 @@ CREATE TABLE "product" (
 	"description" text,
 	"sku" varchar(50) NOT NULL,
 	"price" integer NOT NULL,
-	"category_id" uuid NOT NULL,
+	"category_id" uuid,
 	"is_active" boolean DEFAULT true NOT NULL
 );
 --> statement-breakpoint
@@ -60,7 +60,7 @@ CREATE TABLE "sale" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"created_at" timestamp DEFAULT now(),
 	"updated_at" timestamp DEFAULT now(),
-	"customer_id" uuid NOT NULL,
+	"customer_id" uuid,
 	"sale_date" timestamp with time zone DEFAULT now() NOT NULL,
 	"total_amount" integer NOT NULL,
 	"payment_method" varchar DEFAULT 'cash',

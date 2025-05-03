@@ -53,7 +53,7 @@ function CreatePost() {
   //   }),
   // );
 
-  return (<Text>hi</Text>)
+  return <Text>hi</Text>;
 
   return (
     <View className="mt-4 flex gap-2">
@@ -119,9 +119,7 @@ function MobileAuth() {
 }
 
 export default function Index() {
-
-
-  return (<Text>hi</Text>)
+  return <Text>hi</Text>;
   const queryClient = useQueryClient();
 
   const postQuery = useQuery(trpc.post.all.queryOptions());

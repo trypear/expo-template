@@ -3,15 +3,17 @@ import type {
   Session as NextAuthSession,
   User,
 } from "next-auth";
+import type { AdapterUser } from "next-auth/adapters";
 import { skipCSRFCheck } from "@auth/core";
 import Discord from "next-auth/providers/discord";
+
+import type { USER_ROLES } from "@acme/db";
 import { db } from "@acme/db/client";
+
 import { env } from "../env";
 import { CustomDrizzleAdapter } from "./drizzleAdapter";
-import type { USER_ROLES } from "@acme/db";
-import type { AdapterUser } from "next-auth/adapters";
 
-type BaseUser = User & { userRole: typeof USER_ROLES[number]; }
+type BaseUser = User & { userRole: (typeof USER_ROLES)[number] };
 
 declare module "next-auth" {
   interface Session {
@@ -32,9 +34,9 @@ export const authConfig = {
   // In development, we need to skip checks to allow Expo to work
   ...(!isSecureContext
     ? {
-      skipCSRFCheck: skipCSRFCheck,
-      trustHost: true,
-    }
+        skipCSRFCheck: skipCSRFCheck,
+        trustHost: true,
+      }
     : {}),
   secret: env.AUTH_SECRET,
   providers: [Discord],
@@ -61,11 +63,11 @@ export const validateToken = async (
   const session = await adapter.getSessionAndUser?.(sessionToken);
   return session
     ? {
-      user: {
-        ...session.user,
-      },
-      expires: session.session.expires.toISOString(),
-    }
+        user: {
+          ...session.user,
+        },
+        expires: session.session.expires.toISOString(),
+      }
     : null;
 };
 

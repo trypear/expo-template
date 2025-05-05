@@ -5,7 +5,7 @@ class AssertionError extends Error {
 		super(message);
 		// Adding the stack info to error.
 		// Inspired by: https://blog.dennisokeeffe.com/blog/2020-08-07-error-tracing-with-sentry-and-es6-classes
-		// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+		 
 		if (Error.captureStackTrace) {
 			Error.captureStackTrace(this, AssertionError);
 		} else {

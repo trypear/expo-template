@@ -3,28 +3,6 @@ You are using a monorepo and dev is running.
 You are developing a mobile app and will make changes under apps/mobile-app.
 Import using the @acme/x convention and do not change the ts config.
 
-You MUST INVALIDATE related queries after running a mutation! This will make the dependent content refresh.
-
-When making database queries, use:
-<code>
-db.select().from(user).innerJoin(account, eqi(account.userId, user.id)).where(eqi(user.id, userIdInput))
-</code>
-As the eqi fn throws errors when you might be comparing IDs that will never match.
-
-
-When you get a request from the user, follow these steps:
-- Plan out what you need to do, with requirements
-- Start by editing the database schema, adding in all of the tables (CALL new_task AND USE dave-the-database-nerd MODE) (there will always be packages/db/src/schema.ts present but it will always need editing)
-- Add TRPC endpoints (CALL new_task AND USE timothy-the-trpc-expert MODE)
-- Edit the mobile app, calling TRPC endpoints (USE pimm-the-react-native-expert FOR EVERYTHING on app/mobile-app)
-- Make sure you you invalidate the right queries
-- Generate mock data in the SQL database
-
-When using Drizzle ORM for database operations:
-- For string searches, use the 'like' function: like(column, pattern)
-- For array operations, use 'inArray': inArray(column, values)
-- Import these functions explicitly from '@acme/db'
-
 If you ever get stuck with something potentially being undefined, do:
 import { assert } from "@acme/utils";
 
@@ -34,8 +12,17 @@ FOLLOW THE STEPS AND CALL new_task WITh THE EXPERT NAMES.
 If you ever gets stuck, tell me where you are getting stuck, don't keep trying over and over again
 ## File: packages/db/src/schema.ts
 ```
-import { uniqueIndex, index, varchar, text, integer, timestamp, boolean, time } from "drizzle-orm/pg-core";
+import { uniqueIndex, index, varchar, text, integer, timestamp } from "drizzle-orm/pg-core";
 import { createTable, fk, lower } from "./utils";
+
+// Edit the type to add user roles for RBAC
+export const USER_ROLES = ["user", "admin"] as const;
+
+// *****_____*****_____*****_____*****_____*****_____*****_____
+// DO NOT REMOVE OR RENAME, ONLY ADD TO THESE TABLES IF REQUIRED
+// NEXT AUTH IS DEPENDENT ON THESE HAVING THESE GIVEN COLUMNS
+// MAKE ALL EXTRA FIELDS OPTIONAL - OR HAVE DEFAULTS
+// *****_____*****_____*****_____*****_____*****_____*****_____
 
 export const user = createTable(
   "user",
@@ -44,6 +31,7 @@ export const user = createTable(
     email: varchar({ length: 255 }).notNull(),
     emailVerified: timestamp({ mode: "date", withTimezone: true }),
     image: varchar({ length: 255 }),
+    userRole: varchar({ enum: USER_ROLES }).default("user"),
   },
   (t) => [
     uniqueIndex("user_email_idx").on(lower(t.email))
@@ -56,7 +44,7 @@ export type NewUser = typeof user.$inferInsert;
 export const account = createTable(
   "account",
   {
-    userId: fk("userId", () => user, { onDelete: "cascade" }),
+    userId: fk("user_id", () => user, { onDelete: "cascade" }).notNull(),
     type: varchar({ length: 255 })
       .$type<"email" | "oauth" | "oidc" | "webauthn">()
       .notNull(),
@@ -80,7 +68,7 @@ export type NewAccount = typeof account.$inferInsert;
 
 export const session = createTable("session", {
   sessionToken: varchar({ length: 255 }).notNull(),
-  userId: fk("userId", () => user, { onDelete: "cascade" }),
+  userId: fk("user_id", () => user, { onDelete: "cascade" }).notNull(),
   expires: timestamp({ mode: "date", withTimezone: true }).notNull(),
 },
   (t) => [
@@ -89,73 +77,7 @@ export const session = createTable("session", {
 
 export type Session = typeof session.$inferSelect;
 export type NewSession = typeof session.$inferInsert;
-
-// Farmers Market Schema
-
-export const marketStall = createTable(
-  "market_stall",
-  {
-    name: varchar({ length: 255 }).notNull(),
-    description: text(),
-    location: varchar({ length: 255 }).notNull(),
-  },
-  (t) => [
-    uniqueIndex("stall_name_idx").on(t.name)
-  ]
-);
-
-export type MarketStall = typeof marketStall.$inferSelect;
-export type NewMarketStall = typeof marketStall.$inferInsert;
-
-export const category = createTable(
-  "category",
-  {
-    name: varchar({ length: 255 }).notNull(),
-    description: text(),
-  },
-  (t) => [
-    uniqueIndex("category_name_idx").on(t.name)
-  ]
-);
-
-export type Category = typeof category.$inferSelect;
-export type NewCategory = typeof category.$inferInsert;
-
-export const product = createTable(
-  "product",
-  {
-    name: varchar({ length: 255 }).notNull(),
-    price: integer().notNull(), // Stored in cents/pence
-    isAvailable: boolean().notNull().default(true),
-    stallId: fk("stallId", () => marketStall, { onDelete: "cascade" }).notNull(),
-    categoryId: fk("categoryId", () => category, { onDelete: "set null" }),
-  },
-  (t) => [
-    index("product_stall_idx").on(t.stallId),
-    index("product_category_idx").on(t.categoryId)
-  ]
-);
-
-export type Product = typeof product.$inferSelect;
-export type NewProduct = typeof product.$inferInsert;
-
-export const stallSchedule = createTable(
-  "stall_schedule",
-  {
-    stallId: fk("stallId", () => marketStall, { onDelete: "cascade" }).notNull(),
-    dayOfWeek: integer().notNull(), // 0-6 for Sunday-Saturday
-    openTime: time({ precision: 0 }).notNull(),
-    closeTime: time({ precision: 0 }).notNull(),
-  },
-  (t) => [
-    index("schedule_stall_idx").on(t.stallId),
-    uniqueIndex("stall_day_schedule_idx").on(t.stallId, t.dayOfWeek) // One schedule per day per stall
-  ]
-);
-
-export type StallSchedule = typeof stallSchedule.$inferSelect;
-export type NewStallSchedule = typeof stallSchedule.$inferInsert;
-
+// *****_____*****_____*****_____*****_____*****_____*****_____
 ```
 
 ## File: packages/db/package.json
@@ -220,7 +142,7 @@ export type NewStallSchedule = typeof stallSchedule.$inferInsert;
 ## File: packages/db/src/relations.ts
 ```
 import { relations } from "drizzle-orm";
-import { account, session, user, marketStall, product, category, stallSchedule } from "./schema";
+import { account, session, user } from "./schema";
 
 export const userRelations = relations(user, ({ many }) => ({
 	accounts: many(account),
@@ -233,25 +155,6 @@ export const accountRelations = relations(account, ({ one }) => ({
 
 export const SessionRelations = relations(session, ({ one }) => ({
 	user: one(user, { fields: [session.userId], references: [user.id] }),
-}));
-
-// Farmers Market Relations
-export const marketStallRelations = relations(marketStall, ({ many }) => ({
-	products: many(product),
-	schedules: many(stallSchedule)
-}));
-
-export const productRelations = relations(product, ({ one }) => ({
-	stall: one(marketStall, { fields: [product.stallId], references: [marketStall.id] }),
-	category: one(category, { fields: [product.categoryId], references: [category.id] })
-}));
-
-export const categoryRelations = relations(category, ({ many }) => ({
-	products: many(product)
-}));
-
-export const stallScheduleRelations = relations(stallSchedule, ({ one }) => ({
-	stall: one(marketStall, { fields: [stallSchedule.stallId], references: [marketStall.id] })
 }));
 ```
 
@@ -303,13 +206,11 @@ export const stallScheduleRelations = relations(stallSchedule, ({ one }) => ({
 ```
 import { authRouter } from "./router/auth";
 import { exampleRouter } from "./router/example";
-import { marketRouter } from "./router/market";
 import { createTRPCRouter } from "./trpc";
 
 export const appRouter = createTRPCRouter({
   auth: authRouter,
   example: exampleRouter,
-  market: marketRouter,
 });
 
 // export type definition of API

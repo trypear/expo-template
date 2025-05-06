@@ -9,10 +9,10 @@ import { deleteToken, setToken } from "./session-store";
 import { platform } from "./getPlatform";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-export const signIn = async () => {
+export const signIn = async (authBypass: boolean) => {
   const signInUrl = `${getBaseUrl()}/api/auth/signin`;
   const redirectTo = Linking.createURL("/login");
-  const path = `${signInUrl}?expo-redirect=${encodeURIComponent(redirectTo)}`;
+  const path = `${signInUrl}?expo-redirect=${encodeURIComponent(redirectTo)}${authBypass ? "&authBypass=true" : ""}`;
   if (platform === "web") {
     // Handle web auth synchronously in the same tab
     window.location.assign(path);
@@ -79,7 +79,11 @@ export const useUser = () => {
   return session?.user ?? false;
 };
 
-export const useSignIn = () => {
+/**
+ * Auth bypass only works in dev to help the users get started quickly - it will not work in prod
+ * and an oauth method will need to be setup instead!
+ */
+export const useSignIn = (authBypass: boolean) => {
   const queryClient = useQueryClient();
   const router = useRouter();
 
@@ -107,7 +111,7 @@ export const useSignIn = () => {
 
     // Regular Expo auth flow
     console.log("Starting regular auth flow");
-    const success = await signIn();
+    const success = await signIn(authBypass);
     console.log("Auth flow result:", success);
     if (!success) return;
 

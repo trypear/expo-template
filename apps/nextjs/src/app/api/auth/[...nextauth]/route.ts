@@ -1,10 +1,49 @@
+import { randomUUID } from "crypto";
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
-import { handlers, isSecureContext } from "@acme/auth";
+import { adapter, handlers, isSecureContext } from "@acme/auth";
+import { eq, user } from "@acme/db";
+import { db } from "@acme/db/client";
+import { getFirstEl } from "@acme/utils";
+
+import { env } from "~/env";
 
 const EXPO_COOKIE_NAME = "__acme-expo-redirect-state";
 const AUTH_COOKIE_PATTERN = /authjs\.session-token=([^;]+)/;
+
+/**
+ * Auth bypass is used when the user has no other authentication method configured.
+ * This is only to be used in dev with expo, this does not work with nextjs
+ */
+async function handleExpoAuthBypass(redirectURL: string) {
+  (await cookies()).delete(EXPO_COOKIE_NAME);
+
+  if (env.NODE_ENV !== "development") {
+    throw new Error("NO AUTH BYPASS IN PROD!");
+  }
+  const defaultUser = await db
+    .select()
+    .from(user)
+    .where(eq(user.name, "Test User"))
+    .limit(1)
+    .then(getFirstEl);
+
+  if (!defaultUser) {
+    throw new Error("No default user found :(");
+  }
+
+  const session = await adapter.createSession({
+    sessionToken: randomUUID(),
+    expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30),
+    userId: defaultUser.id,
+  });
+
+  const url = new URL(redirectURL);
+  url.searchParams.set("session_token", session.sessionToken);
+
+  return NextResponse.redirect(url);
+}
 
 /**
  * Noop in production.
@@ -23,9 +62,10 @@ function rewriteRequestUrlInDevelopment(req: NextRequest) {
   return new NextRequest(newURL, req);
 }
 
-async function handleExpoSigninCallback(req: NextRequest, redirectURL: string) {
-  (await cookies()).delete(EXPO_COOKIE_NAME);
-
+async function handleExpoSigninCallback(
+  req: NextRequest,
+  redirectURL: string,
+) {
   // Run original handler, then extract the session token from the response
   // Send it back via a query param in the Expo deep link. The Expo app
   // will then get that and set it in the session storage.
@@ -38,7 +78,7 @@ async function handleExpoSigninCallback(req: NextRequest, redirectURL: string) {
   if (!match)
     throw new Error(
       "Unable to find session cookie: " +
-        JSON.stringify(authResponse.headers.getSetCookie()),
+      JSON.stringify(authResponse.headers.getSetCookie()),
     );
 
   const url = new URL(redirectURL);
@@ -49,13 +89,18 @@ async function handleExpoSigninCallback(req: NextRequest, redirectURL: string) {
 
 export const POST = async (
   _req: NextRequest,
-  props: { params: Promise<{ nextauth: string[] }> },
+  props: { params: { nextauth: string[] } },
 ) => {
   // First step must be to correct the request URL.
   const req = rewriteRequestUrlInDevelopment(_req);
 
-  const nextauthAction = (await props.params).nextauth[0];
+  const isAuthBypass = req.nextUrl.searchParams.get("authBypass") === "true";
+  const nextauthAction = props.params.nextauth[0];
   const isExpoCallback = (await cookies()).get(EXPO_COOKIE_NAME);
+
+  if (isAuthBypass && isExpoCallback) {
+    await handleExpoAuthBypass(isExpoCallback.value)
+  }
 
   // callback handler required separately in the POST handler
   // since Apple sends a POST request instead of a GET
@@ -73,6 +118,8 @@ export const GET = async (
   // First step must be to correct the request URL.
   const req = rewriteRequestUrlInDevelopment(_req);
 
+  const isAuthBypass = req.nextUrl.searchParams.get("authBypass") === "true";
+  const expoAuthBypassRedirect = req.nextUrl.searchParams.get("expo-redirect");
   const nextauthAction = (await props.params).nextauth[0];
   const isExpoSignIn = req.nextUrl.searchParams.get("expo-redirect");
   const isExpoCallback = (await cookies()).get(EXPO_COOKIE_NAME);
@@ -86,6 +133,10 @@ export const GET = async (
       maxAge: 60 * 10, // 10 min
       path: "/",
     });
+  }
+
+  if (isAuthBypass && expoAuthBypassRedirect) {
+    return await handleExpoAuthBypass(expoAuthBypassRedirect)
   }
 
   if (nextauthAction === "callback" && !!isExpoCallback) {

@@ -4,7 +4,8 @@ import { useSignIn } from "@/hooks/auth";
 import { useColorScheme } from "@/hooks/useColorScheme";
 
 export function AuthSplash() {
-  const signIn = useSignIn();
+  // useSignIn with the true arg enables the auth bypass for dev
+  const signIn = useSignIn(true);
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
 

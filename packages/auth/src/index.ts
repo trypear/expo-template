@@ -12,4 +12,5 @@ export {
   invalidateSessionToken,
   validateToken,
   isSecureContext,
+  adapter
 } from "./config";

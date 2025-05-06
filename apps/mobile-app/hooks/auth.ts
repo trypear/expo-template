@@ -9,14 +9,6 @@ import { deleteToken, setToken } from "./session-store";
 import { platform } from "./getPlatform";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-export const useTest = () => {
-  const { data, isLoading } = useQuery(trpc.test.getHello.queryOptions());
-
-  if (isLoading) return null;
-
-  return data;
-}
-
 export const signIn = async () => {
   const signInUrl = `${getBaseUrl()}/api/auth/signin`;
   const redirectTo = Linking.createURL("/login");

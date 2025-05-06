@@ -27,7 +27,7 @@
       "name": "☁️ Cloudflare Tunnel",
       "type": "node-terminal",
       "request": "launch",
-      "command": "cloudflared --config ~/.cloudflared/config-expo-test.yml tunnel run",
+      "command": "cloudflared --config ~/.cloudflared/config-expo.yml tunnel run",
       "skipFiles": ["<node_internals>/**"],
       "killBehavior": "polite"
     },

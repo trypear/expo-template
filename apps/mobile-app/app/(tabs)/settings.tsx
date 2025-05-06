@@ -1,6 +1,5 @@
-/* eslint-disable @typescript-eslint/no-require-imports */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { Button, Image, StyleSheet } from "react-native";
+import { Button, Image, Pressable, StyleSheet } from "react-native";
+import { useRouter } from "expo-router";
 import ParallaxScrollView from "@/components/ParallaxScrollView";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
@@ -8,6 +7,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { useSignIn, useSignOut, useUser } from "../../hooks/auth";
 
 export default function SettingsScreen() {
+  const router = useRouter();
   const user = useUser();
   const signIn = useSignIn();
   const signOut = useSignOut();
@@ -36,6 +36,23 @@ export default function SettingsScreen() {
             color="#5B65E9"
           />
         </ThemedView>
+
+        {/* Admin section */}
+        <ThemedView style={[styles.section, styles.adminSection]}>
+          <ThemedText type="title">Admin</ThemedText>
+          <ThemedText style={styles.sectionDescription}>
+            Create and manage university announcements
+          </ThemedText>
+
+          <Pressable
+            style={styles.adminButton}
+            onPress={() => router.push("/admin")}
+          >
+            <ThemedText style={styles.adminButtonText}>
+              Manage Announcements
+            </ThemedText>
+          </Pressable>
+        </ThemedView>
       </ThemedView>
     </ParallaxScrollView>
   );
@@ -45,6 +62,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
+    gap: 16,
   },
   section: {
     gap: 16,
@@ -52,8 +70,25 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: "rgba(255, 255, 255, 0.05)",
   },
+  adminSection: {
+    marginTop: 8,
+  },
   userInfo: {
     paddingVertical: 8,
+  },
+  sectionDescription: {
+    opacity: 0.7,
+    marginBottom: 8,
+  },
+  adminButton: {
+    backgroundColor: "#5B65E9",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  adminButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "600",
   },
   reactLogo: {
     height: 178,

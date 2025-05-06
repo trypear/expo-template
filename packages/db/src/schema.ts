@@ -1,4 +1,4 @@
-import { uniqueIndex, index, varchar, text, integer, timestamp } from "drizzle-orm/pg-core";
+import { uniqueIndex, index, varchar, text, integer, timestamp, boolean } from "drizzle-orm/pg-core";
 import { createTable, fk, lower } from "./utils";
 
 // Edit the type to add user roles for RBAC
@@ -64,3 +64,65 @@ export const session = createTable("session", {
 export type Session = typeof session.$inferSelect;
 export type NewSession = typeof session.$inferInsert;
 // *****_____*****_____*****_____*****_____*****_____*****_____
+
+// University Announcements App Schema
+
+export const category = createTable("category", {
+  name: varchar({ length: 100 }).notNull(),
+  color: varchar({ length: 20 }).notNull(),
+});
+
+export type Category = typeof category.$inferSelect;
+export type NewCategory = typeof category.$inferInsert;
+
+export const author = createTable("author", {
+  name: varchar({ length: 100 }).notNull(),
+  role: varchar({ length: 100 }).notNull(),
+  department: varchar({ length: 100 }).notNull(),
+  avatar: varchar({ length: 255 }),
+});
+
+export type Author = typeof author.$inferSelect;
+export type NewAuthor = typeof author.$inferInsert;
+
+export const announcement = createTable("announcement", {
+  title: varchar({ length: 255 }).notNull(),
+  content: text().notNull(),
+  date: timestamp({ mode: "date", withTimezone: true }).notNull().defaultNow(),
+  categoryId: fk("category_id", () => category, {
+    onDelete: "cascade",
+  }).notNull(),
+  authorId: fk("author_id", () => author, { onDelete: "cascade" }).notNull(),
+  isImportant: boolean().notNull().default(false),
+});
+
+export type Announcement = typeof announcement.$inferSelect;
+export type NewAnnouncement = typeof announcement.$inferInsert;
+
+export const attachment = createTable("attachment", {
+  announcementId: fk("announcement_id", () => announcement, {
+    onDelete: "cascade",
+  }).notNull(),
+  name: varchar({ length: 255 }).notNull(),
+  url: varchar({ length: 255 }).notNull(),
+  type: varchar({ length: 20 }).notNull(),
+});
+
+export type Attachment = typeof attachment.$inferSelect;
+export type NewAttachment = typeof attachment.$inferInsert;
+
+export const userBookmark = createTable(
+  "user_bookmark",
+  {
+    userId: fk("user_id", () => user, { onDelete: "cascade" }).notNull(),
+    announcementId: fk("announcement_id", () => announcement, {
+      onDelete: "cascade",
+    }).notNull(),
+  },
+  (t) => [
+    uniqueIndex("user_bookmark_unique_idx").on(t.userId, t.announcementId),
+  ],
+);
+
+export type UserBookmark = typeof userBookmark.$inferSelect;
+export type NewUserBookmark = typeof userBookmark.$inferInsert;

@@ -3,13 +3,13 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
-    "dev": "expo start",
-    "reset-project": "node ./scripts/reset-project.js",
-    "android": "expo run:android",
-    "ios": "expo run:ios",
-    "web": "expo start --web",
+    "dev": "pnpm with-env expo start",
+    "android": "pnpm with-env expo run:android",
+    "ios": "pnpm with-env expo run:ios",
+    "web": "pnpm with-env expo start --web",
     "test": "jest --watchAll",
-    "lint": "expo lint"
+    "lint": "pnpm with-env expo lint",
+    "with-env": "dotenv -e ../../.env.expo --"
   },
   "jest": {
     "preset": "jest-expo"
@@ -65,6 +65,7 @@
     "@types/js-cookie": "^3.0.6",
     "@types/react": "~18.3.12",
     "@types/react-test-renderer": "^18.3.0",
+    "dotenv": "^16.5.0",
     "eslint": "catalog:",
     "jest": "^29.2.1",
     "jest-expo": "~52.0.6",

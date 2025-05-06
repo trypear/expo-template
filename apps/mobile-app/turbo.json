@@ -7,5 +7,6 @@
       "interactive": true
     }
   },
-  "globalPassThroughEnv": ["EXPO_OS"]
+  "globalPassThroughEnv": ["EXPO_OS", "EXPO_PUBLIC_API_URL"],
+  "globalEnv": ["EXPO_PUBLIC_API_URL"]
 }

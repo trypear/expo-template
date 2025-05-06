@@ -350,6 +350,9 @@ importers:
       '@types/react-test-renderer':
         specifier: ^18.3.0
         version: 18.3.1
+      dotenv:
+        specifier: ^16.5.0
+        version: 16.5.0
       eslint:
         specifier: 'catalog:'
         version: 9.25.1(jiti@2.4.2)

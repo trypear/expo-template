@@ -13,17 +13,21 @@ export const getBaseUrl = () => {
    * **NOTE**: This is only for development. In production, you'll want to set the
    * baseUrl to your production API URL.
    */
-  // const debuggerHost = Constants.expoConfig?.hostUri;
-  // const localhost = debuggerHost?.split(":")[0];
+  const debuggerHost = Constants.expoConfig?.hostUri;
+  const localhost = debuggerHost?.split(":")[0];
 
-  // console.log(localhost, debuggerHost);
+  console.log(localhost, debuggerHost, process.env);
 
-  // if (!localhost) {
-  //   // return "https://turbo.t3.gg";
-  //   throw new Error(
-  //     "Failed to get localhost. Please point to your production server.",
-  //   );
-  // }
-  return `https://deathmail-mac.j4a.uk`;
-  // return "http://192.168.68.64:3000"
+  if (localhost) {
+    return localhost;
+  }
+
+  if (process.env.EXPO_PUBLIC_API_URL) {
+    return process.env.EXPO_PUBLIC_API_URL
+  }
+
+
+  throw new Error(
+    "Failed to get localhost. Please setup your EXPO_PUBLIC_API_URL environment variable to point to your local IP or a tunnel (in .env.expo).",
+  );
 };

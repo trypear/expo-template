@@ -18,11 +18,12 @@ import {
 /**
  * Extracts the UUID portion after the last underscore
  * If no underscore exists, returns the original string
+ * UNCOMMENT FOR PREFIXED IDs
  */
-function extractUuid(prefixedId: string): string {
-	const lastUnderscoreIndex = prefixedId.lastIndexOf('_');
-	return lastUnderscoreIndex !== -1 ? prefixedId.substring(lastUnderscoreIndex + 1) : prefixedId;
-}
+// function extractUuid(prefixedId: string): string {
+// 	const lastUnderscoreIndex = prefixedId.lastIndexOf('_');
+// 	return lastUnderscoreIndex !== -1 ? prefixedId.substring(lastUnderscoreIndex + 1) : prefixedId;
+// }
 
 /**
  * Type for prefixed identifiers with table name
@@ -32,17 +33,21 @@ type PrefixedId<TableName extends string> = `${TableName}_${string}`;
 /**
  * Creates a custom type that automatically prefixes UUIDs with the table name
  */
-export function createPrefixedUuid<TIdName extends string>(nameFn: () => TIdName) {
+export function createPrefixedUuid<TIdName extends string>(_nameFn: () => TIdName) {
 	return customType<{
 		data: string;
 		driverData: PrefixedId<TIdName>;
 	}>({
 		dataType: () => 'uuid',
 		fromDriver: (val): PrefixedId<TIdName> => {
-			return `${nameFn()}_${val}` as PrefixedId<TIdName>;
+			return val;
+			// UNCOMMENT FOR PREFIXED IDs
+			// return `${_nameFn()}_${val}` as PrefixedId<TIdName>;
 		},
 		toDriver: (val) => {
-			return extractUuid(val) as PrefixedId<TIdName>;
+			return val as PrefixedId<TIdName>;
+			// UNCOMMENT FOR PREFIXED IDs
+			// return extractUuid(val) as PrefixedId<TIdName>;
 		},
 	});
 }

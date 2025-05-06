@@ -31,7 +31,7 @@ export function AuthSplash() {
           Sign in to access your account
         </Text>
         <Pressable onPress={() => void signIn()} style={styles.button}>
-          <Text style={styles.buttonText}>Sign in with Discord</Text>
+          <Text style={styles.buttonText}>Sign in</Text>
         </Pressable>
       </View>
     </View>

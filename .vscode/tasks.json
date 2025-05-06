@@ -1,0 +1,326 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    // CLOUDFLARE TUNNEL TASK
+    {
+      "label": "☁️ Cloudflare Tunnel",
+      "type": "shell",
+      "command": "cloudflared --config ~/.cloudflared/config-expo.yml tunnel run",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "infrastructure"
+      },
+      "detail": "Run Cloudflare tunnel for external access"
+    },
+
+    // MOBILE APP TASKS
+    {
+      "label": "📱 Mobile: Dev",
+      "type": "shell",
+      "command": "cd apps/mobile-app && pnpm dev",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "dev"
+      },
+      "detail": "Run Expo dev server"
+    },
+    {
+      "label": "📱 Mobile: Android",
+      "type": "shell",
+      "command": "cd apps/mobile-app && pnpm android",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "mobile"
+      },
+      "detail": "Run on Android"
+    },
+    {
+      "label": "📱 Mobile: iOS",
+      "type": "shell",
+      "command": "cd apps/mobile-app && pnpm ios",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "mobile"
+      },
+      "detail": "Run on iOS"
+    },
+    {
+      "label": "📱 Mobile: Web",
+      "type": "shell",
+      "command": "cd apps/mobile-app && pnpm web",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "mobile"
+      },
+      "detail": "Run on Web"
+    },
+
+    // NEXTJS APP TASKS
+    {
+      "label": "🌐 NextJS: Dev",
+      "type": "shell",
+      "command": "cd apps/nextjs && pnpm dev",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "dev"
+      },
+      "detail": "Run NextJS dev server"
+    },
+    {
+      "label": "🌐 NextJS: Build",
+      "type": "shell",
+      "command": "cd apps/nextjs && pnpm build",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "nextjs"
+      },
+      "detail": "Build NextJS app"
+    },
+    {
+      "label": "🌐 NextJS: Start",
+      "type": "shell",
+      "command": "cd apps/nextjs && pnpm start",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "nextjs"
+      },
+      "detail": "Start NextJS production server"
+    },
+
+    // API PACKAGE TASKS
+    {
+      "label": "🔌 API: Watch",
+      "type": "shell",
+      "command": "cd packages/api && pnpm tsc --watch",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "dev"
+      },
+      "detail": "Run API in watch mode (tsc --watch)"
+    },
+    {
+      "label": "🔌 API: Typecheck",
+      "type": "shell",
+      "command": "cd packages/api && pnpm typecheck",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "typecheck"
+      },
+      "detail": "Run API typechecking"
+    },
+
+    // DB PACKAGE TASKS
+    {
+      "label": "📊 DB: Watch",
+      "type": "shell",
+      "command": "cd packages/db && pnpm tsc --watch",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "dev"
+      },
+      "detail": "Run DB in watch mode (tsc --watch)"
+    },
+    {
+      "label": "📊 DB: Push",
+      "type": "shell",
+      "command": "cd packages/db && pnpm push",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "db"
+      },
+      "detail": "Push DB schema changes"
+    },
+    {
+      "label": "📊 DB: Generate",
+      "type": "shell",
+      "command": "cd packages/db && pnpm generate",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "db"
+      },
+      "detail": "Generate Drizzle migrations"
+    },
+    {
+      "label": "📊 DB: Migrate",
+      "type": "shell",
+      "command": "cd packages/db && pnpm migrate",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "db"
+      },
+      "detail": "Run Drizzle migrations"
+    },
+    {
+      "label": "📊 DB: Studio",
+      "type": "shell",
+      "command": "cd packages/db && pnpm studio",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "db"
+      },
+      "detail": "Open Drizzle Studio"
+    },
+
+    // AUTH PACKAGE TASKS
+    {
+      "label": "🔐 Auth: Watch",
+      "type": "shell",
+      "command": "cd packages/auth && pnpm tsc --watch",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "dev"
+      },
+      "detail": "Run Auth in watch mode (tsc --watch)"
+    },
+    {
+      "label": "🔐 Auth: Typecheck",
+      "type": "shell",
+      "command": "cd packages/auth && pnpm typecheck",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "typecheck"
+      },
+      "detail": "Run Auth typechecking"
+    },
+
+    // UTILS PACKAGE TASKS
+    {
+      "label": "🛠️ Utils: Watch",
+      "type": "shell",
+      "command": "cd packages/utils && pnpm tsc --watch",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "dev"
+      },
+      "detail": "Run Utils in watch mode (tsc --watch)"
+    },
+    {
+      "label": "🛠️ Utils: Typecheck",
+      "type": "shell",
+      "command": "cd packages/utils && pnpm typecheck",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "typecheck"
+      },
+      "detail": "Run Utils typechecking"
+    },
+
+    // VALIDATORS PACKAGE TASKS
+    {
+      "label": "✅ Validators: Watch",
+      "type": "shell",
+      "command": "cd packages/validators && pnpm tsc --watch",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "dev"
+      },
+      "detail": "Run Validators in watch mode (tsc --watch)"
+    },
+    {
+      "label": "✅ Validators: Typecheck",
+      "type": "shell",
+      "command": "cd packages/validators && pnpm typecheck",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "typecheck"
+      },
+      "detail": "Run Validators typechecking"
+    },
+
+    // UTILITY TASKS
+    {
+      "label": "✨ Format Fix",
+      "type": "shell",
+      "command": "pnpm format:fix",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "utility"
+      },
+      "detail": "Fix formatting issues"
+    },
+    {
+      "label": "🧹 Lint Fix",
+      "type": "shell",
+      "command": "pnpm lint:fix",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "utility"
+      },
+      "detail": "Fix linting issues"
+    },
+    {
+      "label": "🔎 Typecheck All",
+      "type": "shell",
+      "command": "pnpm typecheck",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "utility"
+      },
+      "detail": "Run typechecking for all packages"
+    },
+
+    // COMPOUND TASKS
+    {
+      "label": "🚀 Start All Dev Servers",
+      "dependsOn": [
+        "☁️ Cloudflare Tunnel",
+        "🔌 API: Watch",
+        "📊 DB: Watch",
+        "🔐 Auth: Watch",
+        "🛠️ Utils: Watch",
+        "✅ Validators: Watch",
+        "🌐 NextJS: Dev",
+        "📱 Mobile: Dev"
+      ],
+      "problemMatcher": []
+    }
+  ]
+}

@@ -2,7 +2,16 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Next.js",
+      "name": "📱 Mobile App: Dev",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "pnpm dev",
+      "cwd": "${workspaceFolder}/apps/mobile-app",
+      "skipFiles": ["<node_internals>/**"],
+      "killBehavior": "polite"
+    },
+    {
+      "name": "🌐 Next.js: Dev",
       "type": "node-terminal",
       "request": "launch",
       "command": "pnpm dev",
@@ -11,7 +20,99 @@
       "sourceMaps": true,
       "sourceMapPathOverrides": {
         "/turbopack/[project]/*": "${webRoot}/*" //https://github.com/vercel/next.js/issues/62008
-      }
+      },
+      "killBehavior": "polite"
+    },
+    {
+      "name": "☁️ Cloudflare Tunnel",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "cloudflared --config ~/.cloudflared/config-expo-test.yml tunnel run",
+      "skipFiles": ["<node_internals>/**"],
+      "killBehavior": "polite"
+    },
+    {
+      "name": "🔌 API: Watch",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "pnpm tsc --watch",
+      "cwd": "${workspaceFolder}/packages/api",
+      "skipFiles": ["<node_internals>/**"],
+      "killBehavior": "polite"
+    },
+    {
+      "name": "📊 DB: Watch",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "pnpm tsc --watch",
+      "cwd": "${workspaceFolder}/packages/db",
+      "skipFiles": ["<node_internals>/**"],
+      "killBehavior": "polite"
+    },
+    {
+      "name": "🔐 Auth: Watch",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "pnpm tsc --watch",
+      "cwd": "${workspaceFolder}/packages/auth",
+      "skipFiles": ["<node_internals>/**"],
+      "killBehavior": "polite"
+    },
+    {
+      "name": "🛠️ Utils: Watch",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "pnpm tsc --watch",
+      "cwd": "${workspaceFolder}/packages/utils",
+      "skipFiles": ["<node_internals>/**"],
+      "killBehavior": "polite"
+    },
+    {
+      "name": "✅ Validators: Watch",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "pnpm tsc --watch",
+      "cwd": "${workspaceFolder}/packages/validators",
+      "skipFiles": ["<node_internals>/**"],
+      "killBehavior": "polite"
+    },
+    {
+      "name": "📊 DB: Studio",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "pnpm studio",
+      "cwd": "${workspaceFolder}/packages/db",
+      "skipFiles": ["<node_internals>/**"],
+      "killBehavior": "polite"
+    },
+    {
+      "name": "📊 DB: Push",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "pnpm push",
+      "cwd": "${workspaceFolder}/packages/db",
+      "skipFiles": ["<node_internals>/**"],
+      "killBehavior": "polite"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "🚀 Start All Dev Servers",
+      "configurations": [
+        "☁️ Cloudflare Tunnel",
+        "🔌 API: Watch",
+        "📊 DB: Watch",
+        "🔐 Auth: Watch",
+        "🛠️ Utils: Watch",
+        "✅ Validators: Watch",
+        "🌐 Next.js: Dev",
+        "📱 Mobile App: Dev"
+      ],
+      "presentation": {
+        "group": "",
+        "order": 1
+      },
+      "stopAll": true
     }
   ]
 }

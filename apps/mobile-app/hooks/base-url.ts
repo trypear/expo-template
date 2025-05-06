@@ -16,18 +16,15 @@ export const getBaseUrl = () => {
   const debuggerHost = Constants.expoConfig?.hostUri;
   const localhost = debuggerHost?.split(":")[0];
 
-  console.log(localhost, debuggerHost, process.env);
-
   if (localhost) {
     return localhost;
   }
 
+  // If we're using the mobile app or the simulator, we have to setup cloudflare tunnels and use this public api url
   if (process.env.EXPO_PUBLIC_API_URL) {
     return process.env.EXPO_PUBLIC_API_URL
   }
 
+  return "http://localhost:3000"
 
-  throw new Error(
-    "Failed to get localhost. Please setup your EXPO_PUBLIC_API_URL environment variable to point to your local IP or a tunnel (in .env.expo).",
-  );
 };

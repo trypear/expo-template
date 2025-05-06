@@ -1,16 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
-
-import { HydrateClient, trpc } from "~/trpc/server";
-
 export default function HomePage() {
-  const { isLoading, data } = useQuery(trpc.test.getHello.queryOptions());
-
   return (
-    <HydrateClient>
-      <main className="container h-screen py-16">
-        Test data:
-        {isLoading ? "Loading..." : JSON.stringify(data)}
-      </main>
-    </HydrateClient>
+    <div className="align middle flex size-full min-h-screen justify-center bg-black text-white">
+      <div className="m-auto">API Is Up!</div>
+    </div>
   );
 }

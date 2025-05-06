@@ -1,4 +1,3 @@
-
 You are using a monorepo and dev is running.
 You are developing a mobile app and will make changes under apps/mobile-app.
 Import using the @acme/x convention and do not change the ts config.
@@ -8,9 +7,11 @@ import { assert } from "@acme/utils";
 
 assert(!!value, "value should be defined")
 
-FOLLOW THE STEPS AND CALL new_task WITh THE EXPERT NAMES.
-If you ever gets stuck, tell me where you are getting stuck, don't keep trying over and over again
+If you ever gets stuck, tell me where you are getting stuck, don't keep trying over and over again.
+WHEN YOU HAVE FINISHED YOUR TASK, PLEASE RETURN.
+
 ## File: packages/db/src/schema.ts
+
 ```
 import { uniqueIndex, index, varchar, text, integer, timestamp } from "drizzle-orm/pg-core";
 import { createTable, fk, lower } from "./utils";
@@ -81,6 +82,7 @@ export type NewSession = typeof session.$inferInsert;
 ```
 
 ## File: packages/db/package.json
+
 ```
 {
   "name": "@acme/db",
@@ -140,6 +142,7 @@ export type NewSession = typeof session.$inferInsert;
 ```
 
 ## File: packages/db/src/relations.ts
+
 ```
 import { relations } from "drizzle-orm";
 import { account, session, user } from "./schema";
@@ -159,6 +162,7 @@ export const SessionRelations = relations(session, ({ one }) => ({
 ```
 
 ## File: packages/api/package.json
+
 ```
 {
   "name": "@acme/api",
@@ -203,6 +207,7 @@ export const SessionRelations = relations(session, ({ one }) => ({
 ```
 
 ## File: packages/api/src/root.ts
+
 ```
 import { authRouter } from "./router/auth";
 import { exampleRouter } from "./router/example";
@@ -219,6 +224,7 @@ export type AppRouter = typeof appRouter;
 ```
 
 ## File: packages/api/src/router/test.ts
+
 ```
 import type { TRPCRouterRecord } from "@trpc/server";
 import { publicProcedure } from "../trpc";
@@ -235,6 +241,7 @@ export const testRouter = {
 ```
 
 ## File: packages/api/src/router/auth.ts
+
 ```
 import type { TRPCRouterRecord } from "@trpc/server";
 
@@ -261,6 +268,7 @@ export const authRouter = {
 ```
 
 ## File: packages/utils/src/index.ts
+
 ```
 export const name = "utils";
 
@@ -308,7 +316,8 @@ export const getFirstEl = <T extends object>(x: T[] | null | undefined) => {
 };
 ```
 
-## File: apps/mobile-app/app/_layout.tsx
+## File: apps/mobile-app/app/\_layout.tsx
+
 ```
 /* eslint-disable @typescript-eslint/no-floating-promises */
 /* eslint-disable @typescript-eslint/no-require-imports */
@@ -405,6 +414,7 @@ const styles = StyleSheet.create({
 ```
 
 ## File: apps/mobile-app/package.json
+
 ```
 {
   "name": "@acme/mobile-app",
@@ -486,4 +496,3 @@ const styles = StyleSheet.create({
 }
 
 ```
-
